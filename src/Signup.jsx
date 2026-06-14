@@ -1,0 +1,83 @@
+import { useState } from 'react';
+import { supabase } from './supabaseClient';
+
+export default function Signup({ onBack }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/welcome` },
+      });
+      if (error) throw error;
+      setSuccessMsg('Cuenta creada con éxito. Revisa tu correo para confirmar.');
+    } catch (err) {
+      setErrorMsg(err?.message ?? 'No se pudo crear la cuenta.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="login-wrapper"> {/* Consistent background */}
+      <div className="login-card"> {/* Consistent card style */}
+        <h2>Crear Cuenta</h2>
+
+        {errorMsg && (
+          <p className="error" style={{ marginBottom: '1rem' }}>{errorMsg}</p>
+        )}
+
+        {successMsg && (
+          <p className="success" style={{ marginBottom: '1rem' }}>{successMsg}</p>
+        )}
+
+        <form onSubmit={handleSignup} style={{ marginBottom: '1.5rem' }}>
+          <div style={{ marginBottom: '1rem' }}>
+            <input
+              type="email"
+              placeholder="Correo Electrónico"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              name="email"
+              autoComplete="email"
+              className="input-base" /* Consistent input style */
+            />
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              name="password"
+              autoComplete="new-password"
+              className="input-base" /* Consistent input style */
+            />
+          </div>
+
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? 'Cargando...' : 'Crear Cuenta'}
+          </button>
+        </form>
+
+        <button onClick={onBack} className="btn-primary">
+          Volver
+        </button>
+      </div>
+    </div>
+  );
+}

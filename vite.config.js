@@ -1,0 +1,15 @@
+import { defineConfig } from 'vite'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [
+    react(),
+    babel({ presets: [reactCompilerPreset()] })
+  ],
+  server: {
+    port: 5174,
+    strictPort: true, // Si el puerto 5174 está ocupado, dará error en vez de saltar al 5175
+  }
+})
