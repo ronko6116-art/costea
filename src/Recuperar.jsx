@@ -106,7 +106,7 @@ const handlePasswordReset = async (e) => {
             />
           </div>
 
-          <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
             <Turnstile
               siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
               onSuccess={(token) => { setCaptchaToken(token); setErrorMsg(''); }}
