@@ -69,7 +69,7 @@ const handlePasswordReset = async (e) => {
     }
 
     const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-      redirectTo: 'http://localhost:5174/changepassword',
+      redirectTo: `${window.location.origin}/changepassword`,
       captchaToken,
     });
     if (error) throw error;
