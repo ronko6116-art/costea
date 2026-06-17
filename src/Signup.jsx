@@ -5,6 +5,7 @@ import { Turnstile } from '@marsidev/react-turnstile';
 export default function Signup({ onBack }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -15,9 +16,16 @@ export default function Signup({ onBack }) {
     setLoading(true);
     setErrorMsg('');
     setSuccessMsg('');
+    
     if (!captchaToken) {
       setLoading(false);
       setErrorMsg('Por favor, completa el captcha.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setLoading(false);
+      setErrorMsg('Las contraseñas no coinciden.');
       return;
     }
 
@@ -76,6 +84,19 @@ export default function Signup({ onBack }) {
             />
           </div>
 
+          <div style={{ marginBottom: '1.5rem' }}>
+            <input
+              type="password"
+              placeholder="Confirmar Contraseña"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              name="confirmPassword"
+              autoComplete="new-password"
+              className="input-base" /* Consistent input style */
+            />
+          </div>
+
           <div style={{display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
             <Turnstile
               siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
@@ -85,7 +106,7 @@ export default function Signup({ onBack }) {
             />
           </div>
 
-          <button type="submit" disabled={loading || !captchaToken} className="btn-primary">
+          <button type="submit" disabled={loading || !captchaToken || !password || !confirmPassword || password !== confirmPassword} className="btn-primary">
             {loading ? 'Cargando...' : 'Crear Cuenta'}
           </button>
         </form>
