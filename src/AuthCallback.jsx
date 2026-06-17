@@ -33,7 +33,7 @@ export default function AuthCallback() {
         if (error || !data.session) {
           console.error('Error en callback:', error);
           setMessage('Error al procesar la autenticación');
-          setTimeout(() => navigate('/login', { replace: true }), 1500);
+          setTimeout(() => navigate('/', { replace: true }), 1500);
           return;
         }
 
@@ -41,7 +41,7 @@ export default function AuthCallback() {
         setTimeout(() => navigate('/welcome', { replace: true }), 800);
       } catch (err) {
         console.error(err);
-        navigate('/login', { replace: true });
+        navigate('/', { replace: true });
       }
     };
 
@@ -61,7 +61,7 @@ export default function AuthCallback() {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
       setMessage('Contraseña actualizada. Redirigiendo al login...');
-      setTimeout(() => navigate('/login', { replace: true }), 1200);
+      setTimeout(() => navigate('/', { replace: true }), 1200);
     } catch (err) {
       console.error('Error al actualizar contraseña:', err);
       setMessage(err?.message ?? 'No se pudo actualizar la contraseña.');

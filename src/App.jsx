@@ -45,7 +45,7 @@ function App() {
 
       <Route 
         path="/welcome" 
-        element={session ? <Welcome /> : <Navigate to="/login" replace />} 
+        element={session ? <Welcome /> : <Navigate to="/" replace />} 
       />
 
       {/* ✅ Sin protección: el componente gestiona su propia sesión */}
