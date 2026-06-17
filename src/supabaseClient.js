@@ -12,7 +12,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,        // Muy importante para OAuth
-    flowType: 'pkce',                // Recomendado para SPA
+    detectSessionInUrl: true,        // Detecta tokens en URL/hash
+    flowType: 'implicit',            // Compatible con cualquier navegador en móvil
   },
 });

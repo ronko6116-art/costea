@@ -13,37 +13,23 @@ export default function ChangePassword() {
 
   useEffect(() => {
     const init = async () => {
-      // ── Caso 1: PKCE flow → hay un ?code= en la URL ──
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-
-      if (code) {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) {
-          setErrorMsg('El enlace ha expirado o ya fue usado. Solicita uno nuevo.');
-        } else if (data?.session) {
-          setReady(true);
-        }
-        return; // no seguir con los otros casos
-      }
-
-      // ── Caso 2: Implicit flow → el token ya está en el hash (#access_token=...) ──
-      // Supabase lo procesa automáticamente, solo verificamos si hay sesión activa
+      // Con Implicit flow, Supabase detecta automáticamente el token en el hash
+      // Solo verificamos si hay sesión activa
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setReady(true);
         return;
       }
 
-      // ── Caso 3: El evento llega después del montaje ──
-      // El listener de abajo lo captura
+      // Si no hay sesión, esperar a que llegue el evento de auth change
+      // (útil si la redirección aún no ha procesado el hash)
     };
 
     init();
 
-    // Listener por si el evento llega después
+    // Listener para cuando el evento llega después del montaje
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' && session) {
+      if ((event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && session) {
         setReady(true);
       }
     });
