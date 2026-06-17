@@ -6,11 +6,11 @@ import Recuperar from './Recuperar';
 import Signup from './Signup';
 import { Turnstile } from '@marsidev/react-turnstile';
 
-export default function Login() {
+export default function Login({ embedded = false, initialMode = 'login' }) {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mode, setMode] = useState('login');
+  const [mode, setMode] = useState(initialMode);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [captchaToken, setCaptchaToken] = useState('');
@@ -144,6 +144,10 @@ export default function Login() {
         );
     }
   };
+
+  if (embedded) {
+    return renderContent();
+  }
 
   return <div className="auth-wrapper">{renderContent()}</div>;
 }

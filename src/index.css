@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap');
 @import 'tailwindcss';
 
 /* ============================================================
@@ -11,9 +12,12 @@
   --color-olive-dark: #4d571f;
   --color-cream: #fdf8f5;
   --color-warm-gray: #8d99ae;
+  --color-ink: #2f2a25;
+  --color-ink-soft: #5c554d;
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     sans-serif;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
 }
 
 html,
@@ -310,4 +314,162 @@ body {
   border: 1px solid rgba(96, 108, 56, 0.3);
   border-radius: 0.75rem;
   text-align: left;
+}
+
+/* ============================================================
+   Public landing page (Demo + Navbar)
+   ============================================================ */
+.hero-gradient {
+  background:
+    radial-gradient(
+      ellipse at top,
+      rgba(231, 111, 81, 0.08),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at bottom,
+      rgba(96, 108, 56, 0.07),
+      transparent 55%
+    ),
+    var(--color-cream);
+}
+
+/* Signature element: a little "comanda" order ticket */
+.ticket {
+  position: relative;
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow:
+    0 1px 2px rgba(59, 53, 47, 0.04),
+    0 24px 48px -18px rgba(59, 53, 47, 0.25);
+  transform: rotate(-1.5deg);
+}
+
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-warm-gray);
+  text-transform: uppercase;
+}
+
+.ticket-divider {
+  position: relative;
+  height: 1px;
+  margin: 0.9rem 0 1rem;
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(141, 153, 174, 0.45) 0,
+    rgba(141, 153, 174, 0.45) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+
+.ticket-divider::before,
+.ticket-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  background: var(--color-cream);
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+
+.ticket-divider::before {
+  left: -1.5rem;
+}
+
+.ticket-divider::after {
+  right: -1.5rem;
+}
+
+.ticket-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: #2f2a25;
+}
+
+.ticket-items li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ticket-items li svg {
+  flex-shrink: 0;
+  color: var(--color-olive);
+}
+
+.ticket-items li.pending {
+  color: var(--color-warm-gray);
+}
+
+.ticket-items .dot {
+  flex-shrink: 0;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  border: 2px solid var(--color-terracotta);
+}
+
+.ticket-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(141, 153, 174, 0.25);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-terracotta-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   Login modal (navbar "Iniciar sesión" / "Crear cuenta")
+   ============================================================ */
+.modal-backdrop {
+  background: rgba(59, 53, 47, 0.45);
+  animation: modal-backdrop-in 0.18s ease-out;
+}
+
+.modal-panel {
+  animation: modal-panel-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop,
+  .modal-panel {
+    animation: none;
+  }
 }

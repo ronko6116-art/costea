@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 
 import Login from './Login';
+import Home from './Home';
 import Welcome from './Welcome';
 import ChangePassword from './ChangePassword';
 import AuthCallback from './AuthCallback';
@@ -35,7 +36,7 @@ function App() {
   return (
   <div className="min-h-screen bg-gray-50">
     <Routes>
-      <Route path="/" element={<Navigate to={session ? "/welcome" : "/login"} replace />} />
+      <Route path="/" element={session ? <Navigate to="/welcome" replace /> : <Home />} />
 
       <Route 
         path="/login" 
