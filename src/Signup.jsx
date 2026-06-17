@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from './supabaseClient';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function Signup({ onBack }) {
   const [email, setEmail] = useState('');
@@ -7,18 +8,24 @@ export default function Signup({ onBack }) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
 
   const handleSignup = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
     setSuccessMsg('');
+    if (!captchaToken) {
+      setLoading(false);
+      setErrorMsg('Por favor, completa el captcha.');
+      return;
+    }
 
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${window.location.origin}/welcome` },
+        options: { emailRedirectTo: `${window.location.origin}/welcome`, captchaToken },
       });
       if (error) throw error;
       setSuccessMsg('Cuenta creada con éxito. Revisa tu correo para confirmar.');
@@ -69,7 +76,16 @@ export default function Signup({ onBack }) {
             />
           </div>
 
-          <button type="submit" disabled={loading} className="btn-primary">
+          <div style={{ marginBottom: '1.5rem' }}>
+            <Turnstile
+              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+              onSuccess={(token) => { setCaptchaToken(token); setErrorMsg(''); }}
+              onError={() => setErrorMsg('Error en el captcha, recarga la página.')}
+              onExpire={() => setCaptchaToken('')}
+            />
+          </div>
+
+          <button type="submit" disabled={loading || !captchaToken} className="btn-primary">
             {loading ? 'Cargando...' : 'Crear Cuenta'}
           </button>
         </form>

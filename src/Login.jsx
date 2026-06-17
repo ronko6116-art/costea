@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient';
 //import './Login.css';
 import Recuperar from './Recuperar';
 import Signup from './Signup';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
@@ -12,6 +13,7 @@ export default function Login() {
   const [mode, setMode] = useState('login');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
 
   const navigate = useNavigate();
 
@@ -34,14 +36,20 @@ export default function Login() {
     setErrorMsg('');
     try {
       if (mode === 'login') {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (!captchaToken) {
+          setErrorMsg('Por favor, completa el captcha.');
+          setLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken } });
         if (error) throw error;
         if (data?.session) navigate('/welcome');
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/welcome` },
+          options: { emailRedirectTo: `${window.location.origin}/welcome`, captchaToken },
         });
         if (error) throw error;
         navigate('/welcome');
@@ -100,7 +108,16 @@ export default function Login() {
                   />
                 </div>
 
-                <button type="submit" disabled={loading} className="btn-primary">
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => { setCaptchaToken(token); setErrorMsg(''); }}
+                    onError={() => setErrorMsg('Error en el captcha, recarga la página.')}
+                    onExpire={() => setCaptchaToken('')}
+                  />
+                </div>
+
+                <button type="submit" disabled={loading || !captchaToken} className="btn-primary">
                   {loading ? 'Cargando...' : 'Iniciar Sesión'}
                 </button>
               </form>

@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { supabase } from './supabaseClient';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function Recuperar({ onBack }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
 
   // Comprobación instantánea usando el comportamiento de la API de Auth
   const checkAccountExists = async (emailToCheck) => {
@@ -60,9 +62,15 @@ const handlePasswordReset = async (e) => {
   setSuccessMsg('');
 
   try {
-    // Eliminamos la comprobación previa porque no es fiable y complica
+    if (!captchaToken) {
+      setErrorMsg('Por favor, completa el captcha.');
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
       redirectTo: 'http://localhost:5174/changepassword',
+      captchaToken,
     });
     if (error) throw error;
     setSuccessMsg('Revisa tu correo para restablecer la contraseña.');
@@ -98,7 +106,16 @@ const handlePasswordReset = async (e) => {
             />
           </div>
 
-          <button type="submit" disabled={loading} className="btn-primary">
+          <div style={{ marginBottom: '1.5rem' }}>
+            <Turnstile
+              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+              onSuccess={(token) => { setCaptchaToken(token); setErrorMsg(''); }}
+              onError={() => setErrorMsg('Error en el captcha, recarga la página.')}
+              onExpire={() => setCaptchaToken('')}
+            />
+          </div>
+
+          <button type="submit" disabled={loading || !captchaToken} className="btn-primary">
             {loading ? 'Cargando...' : 'Enviar Correo'}
           </button>
         </form>
