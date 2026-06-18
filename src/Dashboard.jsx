@@ -13,10 +13,11 @@ import {
   Home,
   Receipt,
   Bell,
-  User,
-  Package
+  Package,
+  Store
 } from 'lucide-react';
 import PlatoCard from './PlatoCard';
+import Onboarding from './Onboarding';
 
 export default function Dashboard() {
   const { session, signOut } = useAuth();
@@ -27,6 +28,7 @@ export default function Dashboard() {
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarSelector, setMostrarSelector] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   // Cargar restaurantes del usuario
   useEffect(() => {
@@ -44,6 +46,8 @@ export default function Dashboard() {
       setRestaurantes(data);
       if (data.length > 0) {
         setRestauranteSeleccionado(data[0]);
+      } else {
+        setNeedsOnboarding(true);
       }
       setLoading(false);
     };
@@ -93,11 +97,27 @@ export default function Dashboard() {
     navigate('/');
   };
 
+  const handleOnboardingComplete = (nuevoRestaurante) => {
+    setRestaurantes([nuevoRestaurante]);
+    setRestauranteSeleccionado(nuevoRestaurante);
+    setNeedsOnboarding(false);
+  };
+
   // Formateador de moneda
   const formatoMoneda = new Intl.NumberFormat('es-ES', {
     style: 'currency',
     currency: 'EUR',
   });
+
+  // Usuario nuevo sin restaurante
+  if (needsOnboarding) {
+    return (
+      <Onboarding
+        userId={session?.user?.id}
+        onComplete={handleOnboardingComplete}
+      />
+    );
+  }
 
   if (loading && restaurantes.length === 0) {
     return (
@@ -259,9 +279,12 @@ export default function Dashboard() {
             <Package className="h-6 w-6" />
             <span className="text-[10px] font-medium">Ingredientes</span>
         </button>
-        <button className="flex flex-col items-center text-warm-gray">
-          <User className="h-6 w-6" />
-          <span className="text-[10px] font-medium">Perfil</span>
+        <button
+          onClick={() => navigate('/proveedores')}
+          className="flex flex-col items-center text-warm-gray"
+        >
+          <Store className="h-6 w-6" />
+          <span className="text-[10px] font-medium">Proveedores</span>
         </button>
       </nav>
     </div>

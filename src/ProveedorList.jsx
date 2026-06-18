@@ -1,0 +1,146 @@
+// src/ProveedorList.jsx
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from './supabaseClient';
+import { ArrowLeft, Plus, Edit, Trash2, Search, Mail, StickyNote } from 'lucide-react';
+
+export default function ProveedorList() {
+  const navigate = useNavigate();
+  const [proveedores, setProveedores] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    const fetchProveedores = async () => {
+      const { data, error } = await supabase
+        .from('proveedores')
+        .select('*')
+        .order('nombre');
+      if (error) {
+        setError(error.message);
+      } else {
+        setProveedores(data);
+      }
+      setLoading(false);
+    };
+    fetchProveedores();
+  }, []);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('¿Eliminar este proveedor? Los ingredientes asociados perderán su proveedor habitual.')) return;
+    const { error } = await supabase
+      .from('proveedores')
+      .delete()
+      .eq('id', id);
+    if (error) {
+      alert(error.message);
+    } else {
+      setProveedores(prev => prev.filter(p => p.id !== id));
+    }
+  };
+
+  const filtered = proveedores.filter(p =>
+    p.nombre.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="min-h-screen bg-cream pb-8">
+      <header className="sticky top-0 z-40 w-full border-b border-warm-gray/20 bg-cream/95 backdrop-blur-sm">
+        <div className="flex items-center justify-between px-4 h-16">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 -ml-2 rounded-full hover:bg-olive/10 text-ink transition-colors"
+            aria-label="Volver"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+          <span className="font-bold text-ink text-lg">Proveedores</span>
+          <button
+            onClick={() => navigate('/proveedores/nuevo')}
+            className="p-2 rounded-full bg-terracotta text-white hover:bg-terracotta-dark transition-colors"
+            aria-label="Nuevo proveedor"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
+        </div>
+      </header>
+
+      <main className="px-4 py-4 max-w-lg mx-auto">
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-warm-gray" />
+          <input
+            type="text"
+            placeholder="Buscar proveedor..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 rounded-xl border border-warm-gray/20 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+          />
+        </div>
+
+        {error && <div className="text-red-600 text-sm mb-4">{error}</div>}
+
+        {loading ? (
+          <div className="text-center text-ink-soft py-8">Cargando...</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center text-ink-soft py-8">
+            <p className="mb-1">
+              {search ? 'No hay proveedores que coincidan.' : 'Aún no hay proveedores.'}
+            </p>
+            {!search && (
+              <button
+                onClick={() => navigate('/proveedores/nuevo')}
+                className="mt-4 bg-terracotta text-white px-6 py-2 rounded-full text-sm font-semibold"
+              >
+                Crear el primero
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filtered.map((p) => (
+              <div
+                key={p.id}
+                className="bg-white rounded-xl border border-warm-gray/10 p-4 shadow-sm flex items-start justify-between gap-3"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-ink truncate">{p.nombre}</p>
+                  <div className="flex flex-col gap-0.5 mt-1">
+                    {p.email_facturacion && (
+                      <span className="flex items-center gap-1.5 text-xs text-warm-gray">
+                        <Mail className="h-3.5 w-3.5 shrink-0" />
+                        {p.email_facturacion}
+                      </span>
+                    )}
+                    {p.notas && (
+                      <span className="flex items-center gap-1.5 text-xs text-warm-gray truncate">
+                        <StickyNote className="h-3.5 w-3.5 shrink-0" />
+                        {p.notas}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <button
+                    onClick={() => navigate(`/proveedores/editar/${p.id}`)}
+                    className="p-2 rounded-full hover:bg-olive/10 text-ink-soft transition-colors"
+                    aria-label="Editar"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    className="p-2 rounded-full hover:bg-red-50 text-red-500 transition-colors"
+                    aria-label="Eliminar"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

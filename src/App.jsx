@@ -12,6 +12,8 @@ import PlatoForm from './PlatoForm';
 import IngredienteList from './IngredienteList';
 import IngredienteForm from './IngredienteForm';
 import RecetaManager from './RecetaManager';
+import ProveedorList from './ProveedorList';
+import ProveedorForm from './ProveedorForm';
 
 function AppRoutes() {
   const { session, loading } = useAuth();
@@ -48,6 +50,9 @@ function AppRoutes() {
     <Route path="/ingredientes/nuevo" element={<ProtectedRoute><IngredienteForm /></ProtectedRoute>} />
     <Route path="/ingredientes/editar/:id" element={<ProtectedRoute><IngredienteForm /></ProtectedRoute>} />
     <Route path="/plato/:id/receta" element={<ProtectedRoute><RecetaManager /></ProtectedRoute>} />
+    <Route path="/proveedores" element={<ProtectedRoute><ProveedorList /></ProtectedRoute>} />
+    <Route path="/proveedores/nuevo" element={<ProtectedRoute><ProveedorForm /></ProtectedRoute>} />
+    <Route path="/proveedores/editar/:id" element={<ProtectedRoute><ProveedorForm /></ProtectedRoute>} />
     </Routes>
   );
 }

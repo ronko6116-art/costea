@@ -38,7 +38,7 @@ export default function AuthCallback() {
         }
 
         setMessage('¡Login exitoso! Redirigiendo...');
-        setTimeout(() => navigate('/welcome', { replace: true }), 800);
+        setTimeout(() => navigate('/dashboard', { replace: true }), 800);
       } catch (err) {
         console.error(err);
         navigate('/', { replace: true });

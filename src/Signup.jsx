@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from './supabaseClient';
 import { Turnstile } from '@marsidev/react-turnstile';
+//import {dashboard} from './Dashboard';
 
 export default function Signup({ onBack }) {
   const [email, setEmail] = useState('');
@@ -33,7 +34,7 @@ export default function Signup({ onBack }) {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${window.location.origin}/welcome`, captchaToken },
+        options: { emailRedirectTo: `${window.location.origin}/dashboard`, captchaToken },
       });
       if (error) throw error;
       setSuccessMsg('Cuenta creada con éxito. Revisa tu correo para confirmar.');
