@@ -218,23 +218,16 @@ export default function Dashboard() {
         ) : (
           <div className="space-y-3">
             {platos.map((plato) => (
-              <PlatoCard
-                key={plato.plato_id}
-                plato={plato}
-                tieneAlerta={alertas.some(a => a.plato_id === plato.plato_id)}
-                formatoMoneda={formatoMoneda}
-                onPress={() => {
-                  // Aquí navegaremos al detalle del plato (próximo paso)
-                  console.log('Navegar a detalle de', plato.plato_nombre);
-                  <PlatoCard
+                <PlatoCard
                     key={plato.plato_id}
                     plato={plato}
                     tieneAlerta={alertas.some(a => a.plato_id === plato.plato_id)}
                     formatoMoneda={formatoMoneda}
-                    onPress={() => navigate(`/plato/${plato.plato_id}`)}
-                  />
-                }}
-              />
+                    onPress={() => {
+                    console.log('Navegar a detalle de', plato.plato_nombre);
+                    navigate(`/plato/${plato.plato_id}`);
+                    }}
+                />
             ))}
           </div>
         )}

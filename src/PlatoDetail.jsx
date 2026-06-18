@@ -8,7 +8,8 @@ import {
   TrendingDown, 
   TrendingUp, 
   AlertTriangle, 
-  Info 
+  Info,
+  Plus
 } from 'lucide-react';
 
 export default function PlatoDetail() {
@@ -22,9 +23,14 @@ export default function PlatoDetail() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!id || !session) return;
+      if (!id || !session) {
+        setError('No hay sesión o ID de plato');
+        setLoading(false);
+        return;
+      }
 
       try {
+        console.log('Cargando plato ID:', id);
         // 1. Obtener datos del plato (desde la vista)
         const { data: platoData, error: platoError } = await supabase
           .from('vista_coste_platos')
@@ -32,17 +38,21 @@ export default function PlatoDetail() {
           .eq('plato_id', id)
           .single();
 
-        if (platoError) throw platoError;
+        if (platoError) {
+          console.error('Error al obtener plato:', platoError);
+          throw platoError;
+        }
+        console.log('Plato obtenido:', platoData);
         setPlato(platoData);
 
-        // 2. Obtener receta con ingredientes y sus precios
+        // 2. Obtener receta con ingredientes
         const { data: recetaData, error: recetaError } = await supabase
           .from('receta_lineas')
           .select(`
             id,
             cantidad,
             merma_pct,
-            ingrediente:ingredientes (
+            ingrediente:ingrediente_id (
               id,
               nombre,
               unidad_medida,
@@ -51,27 +61,49 @@ export default function PlatoDetail() {
           `)
           .eq('plato_id', id);
 
-        if (recetaError) throw recetaError;
+        if (recetaError) {
+          console.error('Error al obtener receta:', recetaError);
+          throw recetaError;
+        }
+        console.log('Receta obtenida (raw):', recetaData);
+
+        // Verificar que recetaData tiene elementos
+        if (!recetaData || recetaData.length === 0) {
+          console.log('No hay ingredientes en la receta');
+          setIngredientes([]);
+          setLoading(false);
+          return;
+        }
 
         // Calcular coste por línea y total
         let costeTotal = 0;
         const lineasConCoste = recetaData.map(linea => {
-          const precioUnitario = linea.ingrediente?.precio_actual || 0;
+          // Acceder al ingrediente anidado
+          const ingrediente = linea.ingrediente;
+          if (!ingrediente) {
+            console.warn('Línea sin ingrediente:', linea);
+            return null;
+          }
+          const precioUnitario = ingrediente.precio_actual || 0;
           const cantidadConMerma = linea.cantidad * (1 + (linea.merma_pct || 0) / 100);
           const costeLinea = precioUnitario * cantidadConMerma;
           costeTotal += costeLinea;
           return {
             ...linea,
+            ingrediente,
             cantidadConMerma,
             costeLinea,
             precioUnitario,
           };
-        });
+        }).filter(Boolean); // eliminar nulos
+
+        console.log('Líneas con coste:', lineasConCoste);
+        console.log('Coste total calculado:', costeTotal);
 
         setIngredientes(lineasConCoste);
         setLoading(false);
       } catch (err) {
-        console.error(err);
+        console.error('Error en fetchData:', err);
         setError(err.message || 'Error al cargar los datos del plato');
         setLoading(false);
       }
@@ -124,7 +156,6 @@ export default function PlatoDetail() {
 
   return (
     <div className="min-h-screen bg-cream pb-24">
-      {/* Header con navegación */}
       <header className="sticky top-0 z-40 w-full border-b border-warm-gray/20 bg-cream/95 backdrop-blur-sm">
         <div className="flex items-center justify-between px-4 h-16">
           <button
@@ -139,9 +170,10 @@ export default function PlatoDetail() {
           </span>
           <button
             onClick={() => navigate(`/plato/${plato.plato_id}/receta`)}
-            className="bg-olive text-white rounded-full px-4 py-2 text-sm font-semibold hover:bg-olive-dark transition-colors"
+            className="bg-olive text-white rounded-full px-4 py-2 text-sm font-semibold"
           >
-            Gestionar receta
+            <Plus className="h-4 w-4 inline mr-1" />
+            Receta
           </button>
         </div>
       </header>
@@ -223,44 +255,57 @@ export default function PlatoDetail() {
 
         {/* Desglose de ingredientes */}
         <div className="bg-white rounded-xl border border-warm-gray/10 overflow-hidden shadow-sm">
-          <div className="px-5 py-3 border-b border-warm-gray/10">
+          <div className="px-5 py-3 border-b border-warm-gray/10 flex justify-between items-center">
             <h3 className="font-semibold text-ink">Ingredientes y costes</h3>
+            <span className="text-sm text-warm-gray">{ingredientes.length} items</span>
           </div>
 
-          <div className="divide-y divide-warm-gray/10">
-            {ingredientes.map((linea) => (
-              <div key={linea.id} className="px-5 py-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <p className="font-medium text-ink">
-                      {linea.ingrediente?.nombre || 'Ingrediente desconocido'}
-                    </p>
-                    <div className="flex flex-wrap gap-2 text-xs text-warm-gray mt-0.5">
-                      <span>
-                        {linea.cantidad} {linea.ingrediente?.unidad_medida || 'u'}
-                      </span>
-                      {linea.merma_pct > 0 && (
-                        <span className="text-orange-500">
-                          merma {linea.merma_pct}%
+          {ingredientes.length === 0 ? (
+            <div className="px-5 py-8 text-center text-ink-soft">
+              <p>Esta receta aún no tiene ingredientes.</p>
+              <button
+                onClick={() => navigate(`/plato/${plato.plato_id}/receta`)}
+                className="mt-2 text-terracotta font-semibold"
+              >
+                Gestionar receta
+              </button>
+            </div>
+          ) : (
+            <div className="divide-y divide-warm-gray/10">
+              {ingredientes.map((linea) => (
+                <div key={linea.id} className="px-5 py-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <p className="font-medium text-ink">
+                        {linea.ingrediente?.nombre || 'Ingrediente desconocido'}
+                      </p>
+                      <div className="flex flex-wrap gap-2 text-xs text-warm-gray mt-0.5">
+                        <span>
+                          {linea.cantidad} {linea.ingrediente?.unidad_medida || 'u'}
                         </span>
-                      )}
-                      <span>
-                        {formatoMoneda.format(linea.precioUnitario)} / unidad
-                      </span>
+                        {linea.merma_pct > 0 && (
+                          <span className="text-orange-500">
+                            merma {linea.merma_pct}%
+                          </span>
+                        )}
+                        <span>
+                          {formatoMoneda.format(linea.precioUnitario)} / {linea.ingrediente?.unidad_medida || 'u'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right ml-4 flex-shrink-0">
+                      <p className="font-semibold text-ink">
+                        {formatoMoneda.format(linea.costeLinea)}
+                      </p>
+                      <p className="text-xs text-warm-gray">
+                        {plato.coste_total > 0 ? ((linea.costeLinea / plato.coste_total) * 100).toFixed(1) : 0}%
+                      </p>
                     </div>
                   </div>
-                  <div className="text-right ml-4 flex-shrink-0">
-                    <p className="font-semibold text-ink">
-                      {formatoMoneda.format(linea.costeLinea)}
-                    </p>
-                    <p className="text-xs text-warm-gray">
-                      {((linea.costeLinea / plato.coste_total) * 100).toFixed(1)}%
-                    </p>
-                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* Total */}
           <div className="px-5 py-4 bg-cream/50 border-t border-warm-gray/10 flex justify-between items-center">
