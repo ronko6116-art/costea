@@ -11,7 +11,7 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-terracotta text-white">
             <UtensilsCrossed className="h-4 w-4" />
           </span>
-          <span className="text-lg tracking-tight">Comanda</span>
+          <span className="text-lg tracking-tight">Costea</span>
         </a>
 
         <nav className="hidden items-center gap-8 sm:flex">

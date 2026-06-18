@@ -1,4 +1,4 @@
-import { CalendarCheck, ClipboardList, BarChart3, Check } from 'lucide-react';
+import { Receipt, TrendingDown, FileBarChart, Check } from 'lucide-react';
 
 export default function Demo({ onLoginClick, onSignupClick }) {
   return (
@@ -11,18 +11,18 @@ export default function Demo({ onLoginClick, onSignupClick }) {
               Para restaurantes independientes
             </p>
             <h1 className="font-display text-4xl font-bold leading-[1.1] text-ink sm:text-5xl">
-              El control de tu restaurante, sin enredos.
+              Descubre qué plato te da de comer. Y cuál te está costando dinero.
             </h1>
             <p className="mt-5 text-lg text-ink-soft">
-              Reservas, mesas y comandas en un solo panel. Tu equipo deja de
-              perseguir papelitos y empieza a servir mejor.
+              Sube tus facturas de proveedor y Costea vigila el margen real de
+              cada plato de tu carta. Sin Excel, sin sorpresas a final de mes.
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
               <button
                 onClick={onSignupClick}
                 className="w-full rounded-full bg-terracotta px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_18px_-8px_rgba(231,111,81,0.7)] transition-colors hover:bg-terracotta-dark sm:w-auto"
               >
-                Crear cuenta gratis
+                Empieza gratis con 10 platos
               </button>
               <button onClick={onLoginClick} className="text-sm font-medium text-olive hover:underline">
                 ¿Ya tienes cuenta? Inicia sesión
@@ -30,30 +30,30 @@ export default function Demo({ onLoginClick, onSignupClick }) {
             </div>
           </div>
 
-          {/* Signature element: a live "comanda" ticket */}
+          {/* Signature element: margin ticket, same visual language as the order ticket */}
           <div className="ticket w-full max-w-sm">
             <div className="ticket-header">
-              <span>Mesa 4</span>
-              <span>Comanda #128</span>
+              <span>Carta · Principales</span>
+              <span>1 alerta</span>
             </div>
             <div className="ticket-divider" />
             <ul className="ticket-items">
               <li>
                 <Check className="h-4 w-4" />
-                <span>2× Tartar de atún</span>
+                <span>Risotto de hongos · 76%</span>
               </li>
               <li>
                 <Check className="h-4 w-4" />
-                <span>1× Risotto de hongos</span>
+                <span>Costilla braseada · 50%</span>
               </li>
               <li className="pending">
                 <span className="dot" />
-                <span>1× Costilla braseada</span>
+                <span>Tartar de atún · 39%</span>
               </li>
             </ul>
             <div className="ticket-footer">
-              <span>En cocina</span>
-              <span>04:32</span>
+              <span>3 facturas seguidas al alza</span>
+              <span>−8 pts</span>
             </div>
           </div>
         </div>
@@ -63,23 +63,23 @@ export default function Demo({ onLoginClick, onSignupClick }) {
       <section id="funciones" className="px-4 py-20">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-center font-display text-3xl font-bold text-ink">
-            Todo lo que pasa en el salón, en una sola pantalla
+            Vigilancia constante, decisiones puntuales
           </h2>
           <div className="mt-12 grid gap-6 sm:grid-cols-3">
             <FeatureCard
-              icon={CalendarCheck}
-              title="Reservas sin choques"
-              text="Gestiona la disponibilidad de mesas en tiempo real y evita dobles reservas."
+              icon={Receipt}
+              title="Sube la factura, ya está"
+              text="Foto del albarán o reenvío por email. Costea lee cada línea y actualiza el coste de tus ingredientes sin que teclees nada."
             />
             <FeatureCard
-              icon={ClipboardList}
-              title="Comandas en vivo"
-              text="Cada pedido llega directo a cocina, sin papelitos perdidos."
+              icon={TrendingDown}
+              title="Margen real, plato a plato"
+              text="Cada receta se recalcula sola cuando cambia el precio de un ingrediente. Ves el margen de toda tu carta en cualquier momento."
             />
             <FeatureCard
-              icon={BarChart3}
-              title="Cierre del día claro"
-              text="Ventas, propinas y mesas atendidas en un resumen al cerrar el turno."
+              icon={FileBarChart}
+              title="Informes que justifican la suscripción"
+              text="Evolución de costes, ranking de rentabilidad y cuánto te ha ahorrado detectar a tiempo cada subida de proveedor."
             />
           </div>
         </div>
@@ -89,22 +89,22 @@ export default function Demo({ onLoginClick, onSignupClick }) {
       <section id="contacto" className="bg-olive/6 px-4 py-20">
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-5 text-center">
           <h2 className="font-display text-3xl font-bold text-ink">
-            ¿Listo para ordenar mejor tu servicio?
+            Tu próxima decisión de carta, con datos detrás
           </h2>
           <p className="text-ink-soft">
-            Crea tu cuenta y configura tu primer salón en minutos.
+            Crea tu cuenta y sube tu primera factura en menos de 2 minutos.
           </p>
           <button
             onClick={onSignupClick}
             className="rounded-full bg-terracotta px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_18px_-8px_rgba(231,111,81,0.7)] transition-colors hover:bg-terracotta-dark"
           >
-            Empezar ahora
+            Crear cuenta gratis
           </button>
         </div>
       </section>
 
       <footer className="px-4 py-8 text-center text-sm text-warm-gray">
-        © {new Date().getFullYear()} Comanda · Hecho para restaurantes independientes.
+        © {new Date().getFullYear()} Costea · Margen claro para restaurantes independientes.
       </footer>
     </div>
   );
