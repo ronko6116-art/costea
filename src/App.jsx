@@ -1,63 +1,41 @@
-import { useState, useEffect } from 'react';
+// src/App.jsx
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { supabase } from './supabaseClient';
-
+import { AuthProvider, useAuth } from './AuthContext';
 import Login from './Login';
 import Home from './Home';
-import Welcome from './Welcome';
+import Dashboard from './Dashboard';
 import ChangePassword from './ChangePassword';
 import AuthCallback from './AuthCallback';
+import ProtectedRoute from './ProtectedRoute';
 
-function App() {
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+function AppRoutes() {
+  const { session, loading } = useAuth();
 
-  useEffect(() => {
-    // Cargar sesión inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
-
-    // Escuchar cambios de autenticación
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-     // console.log('Auth event:', event, 'Session:', !!session);
-      setSession(session);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (loading) {
-    return <div className="text-center mt-20">Cargando...</div>;
-  }
+  if (loading) return <div className="text-center mt-20">Cargando...</div>;
 
   return (
-  <div className="min-h-screen bg-gray-50">
     <Routes>
-      <Route path="/" element={session ? <Navigate to="/welcome" replace /> : <Home />} />
-
-      <Route 
-        path="/login" 
-        element={!session ? <Login /> : <Navigate to="/welcome" replace />} 
-      />
-
-      <Route 
-        path="/welcome" 
-        element={session ? <Welcome /> : <Navigate to="/" replace />} 
-      />
-
-      {/* ✅ Sin protección: el componente gestiona su propia sesión */}
-      <Route 
-        path="/changepassword" 
-        element={<ChangePassword />} 
-      />
-
+      <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <Home />} />
+      <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" replace />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/changepassword" element={<ChangePassword />} />
+
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
-  </div>
-);
+  );
 }
 
-export default App;
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+  );
+}

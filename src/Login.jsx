@@ -44,15 +44,15 @@ export default function Login({ embedded = false, initialMode = 'login' }) {
 
         const { data, error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken } });
         if (error) throw error;
-        if (data?.session) navigate('/welcome');
+        if (data?.session) navigate('/dashboard');
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/welcome`, captchaToken },
+          options: { emailRedirectTo: `${window.location.origin}/dashboard`, captchaToken },
         });
         if (error) throw error;
-        navigate('/welcome');
+        navigate('/dashboard');
       }
     } catch (err) {
       setErrorMsg(err?.message ?? 'Ocurrió un error');
