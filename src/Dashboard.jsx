@@ -2,8 +2,21 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from './supabaseClient';
-import { ChevronDown, LogOut, AlertTriangle, TrendingDown, TrendingUp, Euro, User, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { 
+  LogOut, 
+  AlertTriangle, 
+  TrendingDown, 
+  TrendingUp, 
+  Euro,
+  ChevronDown,
+  Home,
+  Receipt,
+  Bell,
+  User,
+  Package
+} from 'lucide-react';
+import PlatoCard from './PlatoCard';
 
 export default function Dashboard() {
   const { session, signOut } = useAuth();
@@ -13,267 +26,251 @@ export default function Dashboard() {
   const [platos, setPlatos] = useState([]);
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [mostrarSelector, setMostrarSelector] = useState(false);
 
-  // 1. Cargar restaurantes del usuario
+  // Cargar restaurantes del usuario
   useEffect(() => {
-
     const fetchRestaurantes = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('restaurantes')
-          .select('*')
-          .order('nombre');
+      const { data, error } = await supabase
+        .from('restaurantes')
+        .select('*')
+        .order('nombre');
 
-        if (error) throw error;
-
-        setRestaurantes(data);
-        if (data.length > 0) {
-          setRestauranteSeleccionado(data[0]);
-        }
-      } catch (err) {
-        console.error('Error al cargar restaurantes:', err);
-        setError('No se pudieron cargar tus restaurantes. Verifica que el usuario tenga datos.');
-      } finally {
-        setLoading(false);
+      if (error) {
+        console.error(error);
+        return;
       }
 
-
-
+      setRestaurantes(data);
+      if (data.length > 0) {
+        setRestauranteSeleccionado(data[0]);
+      }
+      setLoading(false);
     };
 
     fetchRestaurantes();
   }, []);
 
-  // 2. Cargar platos y alertas al cambiar de restaurante
+  // Cargar platos y alertas al cambiar de restaurante
   useEffect(() => {
     if (!restauranteSeleccionado) return;
 
     const fetchPlatosYAlertas = async () => {
       setLoading(true);
-      setError(null);
-      try {
-        // Platos con margen
-        const { data: platosData, error: platosError } = await supabase
-          .from('vista_coste_platos')
-          .select('*')
-          .eq('restaurante_id', restauranteSeleccionado.id)
-          .order('plato_nombre');
+      const { data: platosData, error: platosError } = await supabase
+        .from('vista_coste_platos')
+        .select('*')
+        .eq('restaurante_id', restauranteSeleccionado.id)
+        .order('plato_nombre');
 
-        if (platosError) throw platosError;
+      if (platosError) {
+        console.error(platosError);
+      } else {
         setPlatos(platosData);
-
-        // Alertas activas
-        const { data: alertasData, error: alertasError } = await supabase
-          .from('alertas')
-          .select('*')
-          .eq('restaurante_id', restauranteSeleccionado.id)
-          .eq('estado', 'pendiente')
-          .order('created_at', { ascending: false });
-
-        if (alertasError) throw alertasError;
-        setAlertas(alertasData);
-      } catch (err) {
-        console.error('Error al cargar datos:', err);
-        setError('Error al cargar los datos del restaurante.');
-      } finally {
-        setLoading(false);
       }
+
+      const { data: alertasData, error: alertasError } = await supabase
+        .from('alertas')
+        .select('*')
+        .eq('restaurante_id', restauranteSeleccionado.id)
+        .eq('estado', 'pendiente')
+        .order('created_at', { ascending: false });
+
+      if (alertasError) {
+        console.error(alertasError);
+      } else {
+        setAlertas(alertasData);
+      }
+
+      setLoading(false);
     };
 
     fetchPlatosYAlertas();
   }, [restauranteSeleccionado]);
 
   const handleLogout = async () => {
-    if (window.confirm('¿Seguro que quieres cerrar sesión?')) {
-      try {
-        await signOut();
-        navigate('/');
-      } catch (err) {
-        console.error('Error al cerrar sesión:', err);
-        alert('Ocurrió un error al cerrar sesión. Inténtalo de nuevo.');
-      }
-    }
+    await signOut();
+    navigate('/');
   };
 
-  const handleGoHome = () => navigate('/');
+  // Formateador de moneda
+  const formatoMoneda = new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+  });
 
-  // Mostrar error si no hay restaurantes
-  if (error && restaurantes.length === 0) {
+  if (loading && restaurantes.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-cream p-4">
-        <div className="max-w-md text-center">
-          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-ink mb-2">Error al cargar datos</h2>
-          <p className="text-ink-soft mb-4">{error}</p>
-          <p className="text-sm text-ink-soft mb-6">
-            Asegúrate de que el usuario <strong>demo@costea.com</strong> tenga restaurantes asignados.
-            Ejecuta el script de seed en Supabase.
-          </p>
-          <button
-            onClick={handleLogout}
-            className="rounded-full bg-terracotta px-6 py-2 text-white hover:bg-terracotta-dark"
-          >
-            Cerrar sesión y volver
-          </button>
+      <div className="min-h-screen flex items-center justify-center bg-cream">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-terracotta mx-auto mb-4"></div>
+          <p className="text-ink-soft">Cargando tu restaurante...</p>
         </div>
       </div>
     );
   }
 
-  if (loading && restaurantes.length === 0) {
-    return <div className="min-h-screen flex items-center justify-center">Cargando datos de tu restaurante...</div>;
-  }
-
   return (
-    <div className="min-h-screen bg-cream">
-      {/* Navbar propia */}
-      <header className="sticky top-0 z-40 w-full border-b border-warm-gray/20 bg-cream/90 backdrop-blur-sm">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-2 font-bold text-ink">
+    <div className="min-h-screen bg-cream pb-20">
+      {/* Header con navegación */}
+      <header className="sticky top-0 z-40 w-full border-b border-warm-gray/20 bg-cream/95 backdrop-blur-sm">
+        <div className="flex items-center justify-between px-4 h-16">
+          <div className="flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-terracotta text-white">
               <Euro className="h-4 w-4" />
             </span>
-            <span className="text-lg tracking-tight">Costea · Panel</span>
+            <span className="text-lg font-bold text-ink">Costea</span>
           </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleGoHome}
-              className="flex items-center gap-1 rounded-full border border-warm-gray/30 px-3 py-1.5 text-sm font-medium text-ink-soft hover:bg-white/50 transition-colors"
-              title="Ir al inicio"
-            >
-              <Home className="h-4 w-4" />
-              <span className="hidden sm:inline">Inicio</span>
-            </button>
-
-            <span className="text-sm text-ink-soft hidden md:inline">
-              {session?.user?.email}
-            </span>
-
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 rounded-full border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Cerrar sesión</span>
-            </button>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="p-2 rounded-full hover:bg-olive/10 text-olive transition-colors"
+            aria-label="Cerrar sesión"
+          >
+            <LogOut className="h-5 w-5" />
+          </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
-        {/* Selector de restaurante */}
-        {restaurantes.length > 1 && (
-          <div className="mb-6 flex flex-wrap items-center gap-3">
-            <label htmlFor="restaurante" className="text-sm font-semibold text-ink">
-              Restaurante:
-            </label>
-            <select
-              id="restaurante"
-              value={restauranteSeleccionado?.id || ''}
-              onChange={(e) => {
-                const selected = restaurantes.find(r => r.id === e.target.value);
-                setRestauranteSeleccionado(selected);
-              }}
-              className="rounded-lg border border-warm-gray/30 bg-white px-4 py-2 text-sm font-medium text-ink outline-none focus:border-terracotta focus:ring-2 focus:ring-terracotta/20"
+      <main className="px-4 py-4 max-w-6xl mx-auto">
+        {/* Selector de restaurante (mobile-friendly) */}
+        {restaurantes.length > 0 && (
+          <div className="relative mb-4">
+            <button
+              onClick={() => setMostrarSelector(!mostrarSelector)}
+              className="w-full flex items-center justify-between bg-white rounded-xl border border-warm-gray/20 px-4 py-3 shadow-sm"
             >
-              {restaurantes.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.nombre}
-                </option>
-              ))}
-            </select>
+              <span className="font-semibold text-ink">
+                {restauranteSeleccionado?.nombre || 'Selecciona un restaurante'}
+              </span>
+              <ChevronDown className={`h-5 w-5 text-warm-gray transition-transform ${mostrarSelector ? 'rotate-180' : ''}`} />
+            </button>
+            {mostrarSelector && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl border border-warm-gray/20 shadow-lg z-10 overflow-hidden">
+                {restaurantes.map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => {
+                      setRestauranteSeleccionado(r);
+                      setMostrarSelector(false);
+                    }}
+                    className={`w-full text-left px-4 py-3 hover:bg-cream transition-colors ${
+                      r.id === restauranteSeleccionado?.id ? 'bg-cream font-semibold' : ''
+                    }`}
+                  >
+                    {r.nombre}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Resumen de alertas */}
+        {/* Resumen de alertas (destacado) */}
         {alertas.length > 0 && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
+          <div className="mb-6 rounded-xl bg-gradient-to-r from-red-50 to-red-100 border border-red-200 p-4 shadow-sm">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-red-800">¡Atención! {alertas.length} alerta(s) pendiente(s)</p>
-                <ul className="mt-1 text-sm text-red-700 list-disc list-inside">
-                  {alertas.slice(0, 3).map((a) => (
-                    <li key={a.id}>
-                      {a.plato_id ? `Plato: ${platos.find(p => p.plato_id === a.plato_id)?.plato_nombre || 'desconocido'}` : 'Proveedor'} — {a.tipo === 'erosion_margen' ? 'Margen por debajo del objetivo' : 'Subida sostenida de proveedor'}
+              <div className="flex-shrink-0 mt-0.5">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-red-800 text-sm">
+                  {alertas.length} alerta{alertas.length > 1 ? 's' : ''} pendiente{alertas.length > 1 ? 's' : ''}
+                </p>
+                <ul className="mt-1 text-sm text-red-700 space-y-1">
+                  {alertas.slice(0, 2).map((a) => {
+                    const plato = platos.find(p => p.plato_id === a.plato_id);
+                    return (
+                      <li key={a.id} className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
+                        <span>
+                          {plato ? plato.plato_nombre : 'Plato desconocido'}
+                          {a.tipo === 'erosion_margen' && ' → margen bajo'}
+                          {a.tipo === 'proveedor_subida_sostenida' && ' → proveedor subió'}
+                        </span>
+                      </li>
+                    );
+                  })}
+                  {alertas.length > 2 && (
+                    <li className="text-red-600 font-medium text-xs">
+                      + {alertas.length - 2} más
                     </li>
-                  ))}
-                  {alertas.length > 3 && <li>+ {alertas.length - 3} más</li>}
+                  )}
                 </ul>
               </div>
             </div>
           </div>
         )}
 
-        {/* Lista de platos */}
-        <div className="rounded-2xl border border-warm-gray/20 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-ink mb-4">
-            Carta · {restauranteSeleccionado?.nombre || 'Selecciona un restaurante'}
-          </h2>
-
-          {loading ? (
-            <p className="text-ink-soft">Cargando platos...</p>
-          ) : platos.length === 0 ? (
+        {/* Lista de platos en formato tarjeta (mobile-first) */}
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-xl p-4 shadow-sm animate-pulse">
+                <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-gray-100 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        ) : platos.length === 0 ? (
+          <div className="bg-white rounded-xl p-6 text-center shadow-sm">
             <p className="text-ink-soft">Aún no hay platos en este restaurante.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-warm-gray/20 text-xs uppercase text-warm-gray">
-                  <tr>
-                    <th className="py-3 pr-4 font-semibold">Plato</th>
-                    <th className="py-3 pr-4 font-semibold">Categoría</th>
-                    <th className="py-3 pr-4 font-semibold text-right">Precio venta</th>
-                    <th className="py-3 pr-4 font-semibold text-right">Coste</th>
-                    <th className="py-3 pr-4 font-semibold text-right">Margen</th>
-                    <th className="py-3 font-semibold text-right">Alerta</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-warm-gray/10">
-                  {platos.map((p) => {
-                    const esAlerta = alertas.some(a => a.plato_id === p.plato_id);
-                    const margenBajo = p.margen_pct < 50;
-                    return (
-                      <tr key={p.plato_id} className="hover:bg-cream/50 transition-colors">
-                        <td className="py-3 pr-4 font-medium text-ink">{p.plato_nombre}</td>
-                        <td className="py-3 pr-4 text-ink-soft">{p.categoria || '—'}</td>
-                        <td className="py-3 pr-4 text-right text-ink-soft">
-                          {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(p.precio_venta)}
-                        </td>
-                        <td className="py-3 pr-4 text-right text-ink-soft">
-                          {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(p.coste_total)}
-                        </td>
-                        <td className="py-3 pr-4 text-right font-semibold">
-                          <span
-                            className={`inline-flex items-center gap-1 ${margenBajo ? 'text-red-600' : 'text-olive-dark'}`}
-                          >
-                            {p.margen_pct}%
-                            {margenBajo ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
-                          </span>
-                        </td>
-                        <td className="py-3 text-right">
-                          {esAlerta ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-700">
-                              <AlertTriangle className="h-3 w-3" /> Alerta
-                            </span>
-                          ) : (
-                            <span className="text-xs text-warm-gray">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8 text-center text-sm text-warm-gray">
-          <p>Los datos mostrados son de demostración. Los márgenes se calculan en tiempo real con los precios actuales de los ingredientes.</p>
-        </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {platos.map((plato) => (
+              <PlatoCard
+                key={plato.plato_id}
+                plato={plato}
+                tieneAlerta={alertas.some(a => a.plato_id === plato.plato_id)}
+                formatoMoneda={formatoMoneda}
+                onPress={() => {
+                  // Aquí navegaremos al detalle del plato (próximo paso)
+                  console.log('Navegar a detalle de', plato.plato_nombre);
+                  <PlatoCard
+                    key={plato.plato_id}
+                    plato={plato}
+                    tieneAlerta={alertas.some(a => a.plato_id === plato.plato_id)}
+                    formatoMoneda={formatoMoneda}
+                    onPress={() => navigate(`/plato/${plato.plato_id}`)}
+                  />
+                }}
+              />
+            ))}
+          </div>
+        )}
       </main>
+
+      {/* Bottom navigation (mobile) */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-warm-gray/20 px-4 py-2 flex justify-around items-center">
+        <button className="flex flex-col items-center text-terracotta">
+          <Home className="h-6 w-6" />
+          <span className="text-[10px] font-medium">Inicio</span>
+        </button>
+        <button className="flex flex-col items-center text-warm-gray">
+          <Receipt className="h-6 w-6" />
+          <span className="text-[10px] font-medium">Facturas</span>
+        </button>
+        <button className="flex flex-col items-center text-warm-gray relative">
+          <Bell className="h-6 w-6" />
+          {alertas.length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center">
+              {alertas.length}
+            </span>
+          )}
+          <span className="text-[10px] font-medium">Alertas</span>
+        </button>
+        <button
+            onClick={() => navigate('/ingredientes')}
+            className="flex flex-col items-center text-warm-gray"
+            >
+            <Package className="h-6 w-6" />
+            <span className="text-[10px] font-medium">Ingredientes</span>
+        </button>
+        <button className="flex flex-col items-center text-warm-gray">
+          <User className="h-6 w-6" />
+          <span className="text-[10px] font-medium">Perfil</span>
+        </button>
+      </nav>
     </div>
   );
 }

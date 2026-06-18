@@ -473,3 +473,20 @@ body {
     animation: none;
   }
 }
+
+/* Mejoras para móvil */
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Ajustes de fuentes en móvil */
+@media (max-width: 640px) {
+  .text-base {
+    font-size: 1rem;
+  }
+  .text-sm {
+    font-size: 0.875rem;
+  }
+}

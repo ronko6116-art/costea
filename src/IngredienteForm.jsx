@@ -1,0 +1,263 @@
+// src/IngredienteForm.jsx
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from './AuthContext';
+import { supabase } from './supabaseClient';
+import { ArrowLeft, Save, Trash2 } from 'lucide-react';
+
+export default function IngredienteForm() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { session } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [formData, setFormData] = useState({
+    nombre: '',
+    unidad_medida: 'kg',
+    precio_actual: '',
+    categoria: '',
+    proveedor_habitual_id: '',
+  });
+  const [proveedores, setProveedores] = useState([]);
+  const [restauranteId, setRestauranteId] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      // Obtener restaurante
+      const { data: rData, error: rError } = await supabase
+        .from('restaurantes')
+        .select('id')
+        .limit(1)
+        .single();
+      if (rError) {
+        setError('No se encontró restaurante');
+        return;
+      }
+      setRestauranteId(rData.id);
+
+      // Obtener proveedores
+      const { data: pData, error: pError } = await supabase
+        .from('proveedores')
+        .select('id, nombre')
+        .eq('restaurante_id', rData.id);
+      if (!pError) setProveedores(pData);
+
+      // Si es edición, cargar ingrediente
+      if (id) {
+        setLoading(true);
+        const { data: iData, error: iError } = await supabase
+          .from('ingredientes')
+          .select('*')
+          .eq('id', id)
+          .single();
+        if (iError) {
+          setError(iError.message);
+        } else {
+          setFormData({
+            nombre: iData.nombre || '',
+            unidad_medida: iData.unidad_medida || 'kg',
+            precio_actual: iData.precio_actual || '',
+            categoria: iData.categoria || '',
+            proveedor_habitual_id: iData.proveedor_habitual_id || '',
+          });
+        }
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [id]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!restauranteId) {
+      setError('Restaurante no definido');
+      return;
+    }
+    setSaving(true);
+    setError(null);
+
+    const dataToSave = {
+      restaurante_id: restauranteId,
+      nombre: formData.nombre,
+      unidad_medida: formData.unidad_medida,
+      precio_actual: parseFloat(formData.precio_actual) || 0,
+      categoria: formData.categoria || null,
+      proveedor_habitual_id: formData.proveedor_habitual_id || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    try {
+      let result;
+      if (id) {
+        result = await supabase
+          .from('ingredientes')
+          .update(dataToSave)
+          .eq('id', id);
+      } else {
+        dataToSave.created_at = new Date().toISOString();
+        result = await supabase
+          .from('ingredientes')
+          .insert([dataToSave]);
+      }
+      if (result.error) throw result.error;
+      navigate('/ingredientes');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id || !window.confirm('¿Eliminar este ingrediente?')) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from('ingredientes')
+      .delete()
+      .eq('id', id);
+    if (error) {
+      setError(error.message);
+    } else {
+      navigate('/ingredientes');
+    }
+    setSaving(false);
+  };
+
+  if (loading) return <div className="text-center p-8">Cargando...</div>;
+
+  return (
+    <div className="min-h-screen bg-cream pb-8">
+      <header className="sticky top-0 z-40 w-full border-b border-warm-gray/20 bg-cream/95 backdrop-blur-sm">
+        <div className="flex items-center justify-between px-4 h-16">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 -ml-2 rounded-full hover:bg-olive/10 text-ink transition-colors"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+          <span className="font-bold text-ink text-lg">
+            {id ? 'Editar ingrediente' : 'Nuevo ingrediente'}
+          </span>
+          <div className="w-10"></div>
+        </div>
+      </header>
+
+      <main className="px-4 py-4 max-w-lg mx-auto">
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">
+              Nombre *
+            </label>
+            <input
+              type="text"
+              name="nombre"
+              value={formData.nombre}
+              onChange={handleChange}
+              required
+              className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">
+              Unidad de medida *
+            </label>
+            <select
+              name="unidad_medida"
+              value={formData.unidad_medida}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+            >
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="l">l</option>
+              <option value="ml">ml</option>
+              <option value="unidad">unidad</option>
+              <option value="docena">docena</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">
+              Precio actual (€) *
+            </label>
+            <input
+              type="number"
+              name="precio_actual"
+              value={formData.precio_actual}
+              onChange={handleChange}
+              required
+              step="0.01"
+              min="0"
+              className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">
+              Categoría
+            </label>
+            <input
+              type="text"
+              name="categoria"
+              value={formData.categoria}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+              placeholder="Ej: carnes, verduras, lácteos"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">
+              Proveedor habitual
+            </label>
+            <select
+              name="proveedor_habitual_id"
+              value={formData.proveedor_habitual_id}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+            >
+              <option value="">Ninguno</option>
+              {proveedores.map(p => (
+                <option key={p.id} value={p.id}>{p.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 flex items-center justify-center gap-2 bg-terracotta text-white rounded-full py-3 font-semibold disabled:opacity-60"
+            >
+              <Save className="h-5 w-5" />
+              {saving ? 'Guardando...' : id ? 'Actualizar' : 'Crear'}
+            </button>
+            {id && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={saving}
+                className="flex items-center justify-center gap-2 bg-red-500 text-white rounded-full px-5 py-3 font-semibold disabled:opacity-60"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+            )}
+          </div>
+        </form>
+      </main>
+    </div>
+  );
+}

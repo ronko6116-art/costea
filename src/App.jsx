@@ -7,6 +7,11 @@ import Dashboard from './Dashboard';
 import ChangePassword from './ChangePassword';
 import AuthCallback from './AuthCallback';
 import ProtectedRoute from './ProtectedRoute';
+import PlatoDetail from './PlatoDetail';
+import PlatoForm from './PlatoForm';
+import IngredienteList from './IngredienteList';
+import IngredienteForm from './IngredienteForm';
+import RecetaManager from './RecetaManager';
 
 function AppRoutes() {
   const { session, loading } = useAuth();
@@ -28,6 +33,21 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      <Route
+        path="/plato/:id"
+        element={
+            <ProtectedRoute>
+            <PlatoDetail />
+            </ProtectedRoute>
+        }
+      />
+    <Route path="/platos/nuevo" element={<ProtectedRoute><PlatoForm /></ProtectedRoute>} />
+    <Route path="/platos/editar/:id" element={<ProtectedRoute><PlatoForm /></ProtectedRoute>} />
+    <Route path="/ingredientes" element={<ProtectedRoute><IngredienteList /></ProtectedRoute>} />
+    <Route path="/ingredientes/nuevo" element={<ProtectedRoute><IngredienteForm /></ProtectedRoute>} />
+    <Route path="/ingredientes/editar/:id" element={<ProtectedRoute><IngredienteForm /></ProtectedRoute>} />
+    <Route path="/plato/:id/receta" element={<ProtectedRoute><RecetaManager /></ProtectedRoute>} />
     </Routes>
   );
 }
