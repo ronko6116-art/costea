@@ -14,6 +14,9 @@ import IngredienteForm from './IngredienteForm';
 import RecetaManager from './RecetaManager';
 import ProveedorList from './ProveedorList';
 import ProveedorForm from './ProveedorForm';
+import FacturaList from './FacturaList';
+import FacturaUpload from './FacturaUpload';
+import FacturaRevision from './FacturaRevision';
 
 function AppRoutes() {
   const { session, loading } = useAuth();
@@ -53,6 +56,9 @@ function AppRoutes() {
     <Route path="/proveedores" element={<ProtectedRoute><ProveedorList /></ProtectedRoute>} />
     <Route path="/proveedores/nuevo" element={<ProtectedRoute><ProveedorForm /></ProtectedRoute>} />
     <Route path="/proveedores/editar/:id" element={<ProtectedRoute><ProveedorForm /></ProtectedRoute>} />
+    <Route path="/facturas" element={<ProtectedRoute><FacturaList /></ProtectedRoute>} />
+    <Route path="/facturas/nueva" element={<ProtectedRoute><FacturaUpload /></ProtectedRoute>} />
+    <Route path="/facturas/:id/revision" element={<ProtectedRoute><FacturaRevision /></ProtectedRoute>} />
     </Routes>
   );
 }

@@ -13,6 +13,7 @@ import {
   Home,
   Receipt,
   Bell,
+  User,
   Package,
   Store
 } from 'lucide-react';
@@ -109,7 +110,6 @@ export default function Dashboard() {
     currency: 'EUR',
   });
 
-  // Usuario nuevo sin restaurante
   if (needsOnboarding) {
     return (
       <Onboarding
@@ -259,7 +259,10 @@ export default function Dashboard() {
           <Home className="h-6 w-6" />
           <span className="text-[10px] font-medium">Inicio</span>
         </button>
-        <button className="flex flex-col items-center text-warm-gray">
+        <button
+          onClick={() => navigate('/facturas')}
+          className="flex flex-col items-center text-warm-gray"
+        >
           <Receipt className="h-6 w-6" />
           <span className="text-[10px] font-medium">Facturas</span>
         </button>
