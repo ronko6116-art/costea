@@ -293,7 +293,7 @@ export default function PlatoDetail() {
                         </span>
                       </div>
                     </div>
-                    <div className="text-right ml-4 flex-shrink-0">
+                    <div className="text-right ml-4 shrink-0">
                       <p className="font-semibold text-ink">
                         {formatoMoneda.format(linea.costeLinea)}
                       </p>
