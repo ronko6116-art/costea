@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
-import { ArrowLeft, Plus, Edit, Trash2, Search, Mail, StickyNote } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, Search, Mail, Phone, StickyNote } from 'lucide-react';
 
 export default function ProveedorList() {
   const navigate = useNavigate();
@@ -106,6 +106,12 @@ export default function ProveedorList() {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-ink truncate">{p.nombre}</p>
                   <div className="flex flex-col gap-0.5 mt-1">
+                    {p.telefono && (
+                      <span className="flex items-center gap-1.5 text-xs text-warm-gray">
+                        <Phone className="h-3.5 w-3.5 shrink-0" />
+                        {p.telefono}
+                      </span>
+                    )}
                     {p.email_facturacion && (
                       <span className="flex items-center gap-1.5 text-xs text-warm-gray">
                         <Mail className="h-3.5 w-3.5 shrink-0" />

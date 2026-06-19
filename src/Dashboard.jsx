@@ -187,9 +187,9 @@ export default function Dashboard() {
 
         {/* Resumen de alertas (destacado) */}
         {alertas.length > 0 && (
-          <div className="mb-6 rounded-xl bg-gradient-to-r from-red-50 to-red-100 border border-red-200 p-4 shadow-sm">
+          <div className="mb-6 rounded-xl bg-linear-to-r from-red-50 to-red-100 border border-red-200 p-4 shadow-sm">
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-0.5">
+              <div className="shrink-0 mt-0.5">
                 <AlertTriangle className="h-6 w-6 text-red-600" />
               </div>
               <div className="flex-1">
@@ -201,7 +201,7 @@ export default function Dashboard() {
                     const plato = platos.find(p => p.plato_id === a.plato_id);
                     return (
                       <li key={a.id} className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
                         <span>
                           {plato ? plato.plato_nombre : 'Plato desconocido'}
                           {a.tipo === 'erosion_margen' && ' → margen bajo'}
