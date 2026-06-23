@@ -1,8 +1,8 @@
 // src/IngredienteForm.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from './AuthContext';
-import { supabase } from './supabaseClient';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 
 export default function IngredienteForm() {

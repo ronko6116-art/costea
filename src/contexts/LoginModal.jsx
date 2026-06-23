@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
-import Login from './Login';
+import Login from '../pages/Auth/Login';
 
 export default function LoginModal({ open, onClose, initialMode = 'login' }) {
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function LoginModal({ open, onClose, initialMode = 'login' }) {
       className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
-      <div className="modal-panel relative w-full max-w-[26rem]" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-panel relative w-full max-w-104" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}
           aria-label="Cerrar"

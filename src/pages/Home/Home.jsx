@@ -1,10 +1,10 @@
 // src/Home.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from './AuthContext';
-import Navbar from './Navbar';
+import { useAuth } from '../../contexts/AuthContext';
+import Navbar from '../../components/Navbar';
 import Demo from './Demo';
-import LoginModal from './LoginModal';
+import LoginModal from '../../contexts/LoginModal';
 
 export default function Home() {
   const { session } = useAuth();

@@ -1,7 +1,7 @@
 // src/FacturaUpload.jsx
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from './supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Camera, FileUp, Loader2, X, ClipboardPaste, ChevronDown } from 'lucide-react';
 
 // Mock de ejemplo para que sea fácil probar sin tener que escribir el JSON a mano.

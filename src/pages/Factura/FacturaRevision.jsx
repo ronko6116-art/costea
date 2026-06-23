@@ -1,7 +1,7 @@
 // src/FacturaRevision.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from './supabaseClient';
+import { supabase } from '../../supabaseClient';
 import {
   ArrowLeft, Check, AlertCircle, Sparkles, Loader2,
   TrendingUp, TrendingDown, ChevronDown

@@ -1,7 +1,7 @@
 // src/ProveedorList.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from './supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Plus, Edit, Trash2, Search, Mail, Phone, StickyNote } from 'lucide-react';
 
 export default function ProveedorList() {

@@ -1,7 +1,7 @@
 // src/Dashboard.jsx
 import { useEffect, useState } from 'react';
-import { useAuth } from './AuthContext';
-import { supabase } from './supabaseClient';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { 
   LogOut, 
@@ -17,7 +17,7 @@ import {
   Package,
   Store
 } from 'lucide-react';
-import PlatoCard from './PlatoCard';
+import PlatoCard from '../../contexts/PlatoCard';
 import Onboarding from './Onboarding';
 
 export default function Dashboard() {

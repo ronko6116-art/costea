@@ -1,6 +1,6 @@
 // src/Onboarding.jsx
 import { useState } from 'react';
-import { supabase } from './supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { ChefHat, ArrowRight, Loader2 } from 'lucide-react';
 
 const TIPOS_COCINA = [

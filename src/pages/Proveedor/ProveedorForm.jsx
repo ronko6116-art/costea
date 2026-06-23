@@ -1,7 +1,7 @@
 // src/ProveedorForm.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from './supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Save, Trash2, Building2, Phone, MapPin, StickyNote } from 'lucide-react';
 
 const ESTADO_INICIAL = {

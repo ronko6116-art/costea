@@ -1,22 +1,22 @@
 // src/App.jsx
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './AuthContext';
-import Login from './Login';
-import Home from './Home';
-import Dashboard from './Dashboard';
-import ChangePassword from './ChangePassword';
-import AuthCallback from './AuthCallback';
-import ProtectedRoute from './ProtectedRoute';
-import PlatoDetail from './PlatoDetail';
-import PlatoForm from './PlatoForm';
-import IngredienteList from './IngredienteList';
-import IngredienteForm from './IngredienteForm';
-import RecetaManager from './RecetaManager';
-import ProveedorList from './ProveedorList';
-import ProveedorForm from './ProveedorForm';
-import FacturaList from './FacturaList';
-import FacturaUpload from './FacturaUpload';
-import FacturaRevision from './FacturaRevision';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Login from './pages/Auth/Login';
+import Home from './pages/Home/Home';
+import Dashboard from './pages/Dashboard/Dashboard';
+import ChangePassword from './pages/Auth/ChangePassword';
+import AuthCallback from './pages/Auth/AuthCallback';
+import ProtectedRoute from './contexts/ProtectedRoute';
+import PlatoDetail from './pages/Plato/PlatoDetail';
+import PlatoForm from './pages/Plato/PlatoForm';
+import IngredienteList from './pages/Ingrediente/IngredienteList';
+import IngredienteForm from './pages/Ingrediente/IngredienteForm';
+import RecetaManager from './pages/Plato/RecetaManager';
+import ProveedorList from './pages/Proveedor/ProveedorList';
+import ProveedorForm from './pages/Proveedor/ProveedorForm';
+import FacturaList from './pages/Factura/FacturaList';
+import FacturaUpload from './pages/Factura/FacturaUpload';
+import FacturaRevision from './pages/Factura/FacturaRevision';
 
 function AppRoutes() {
   const { session, loading } = useAuth();

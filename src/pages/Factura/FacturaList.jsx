@@ -1,7 +1,7 @@
 // src/FacturaList.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from './supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Plus, Clock, CheckCircle2, AlertCircle, FileSearch } from 'lucide-react';
 
 const ESTADO_CONFIG = {

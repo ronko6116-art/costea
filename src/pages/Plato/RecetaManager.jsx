@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from './AuthContext';
-import { supabase } from './supabaseClient';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Plus, Trash2, AlertTriangle, Check } from 'lucide-react';
 
 export default function RecetaManager() {

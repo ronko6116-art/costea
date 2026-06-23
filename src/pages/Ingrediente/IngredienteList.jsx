@@ -1,8 +1,8 @@
 // src/IngredienteList.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from './AuthContext';
-import { supabase } from './supabaseClient';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Plus, Edit, Trash2, Search } from 'lucide-react';
 
 export default function IngredienteList() {
