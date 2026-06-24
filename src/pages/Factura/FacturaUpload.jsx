@@ -157,6 +157,15 @@ export default function FacturaUpload() {
         archivoUrl = urlData.publicUrl;
       }
 
+      const normalizarFecha = (f) => {
+        if (!f) return null;
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(f)) {
+          const [d, m, y] = f.split('/');
+          return `${y}-${m}-${d}`;
+        }
+        return f;
+      };
+
       const datosCompletos = {
         ...datosExtraidos,
         proveedor_nombre: proveedorNombre.trim(),
@@ -170,7 +179,7 @@ export default function FacturaUpload() {
           restaurante_id: restaurante.id,
           archivo_url: archivoUrl,
           estado: 'pendiente',
-          fecha_factura: datosCompletos.fecha_factura || null,
+          fecha_factura: normalizarFecha(datosCompletos.fecha_factura),
           importe_total: datosCompletos.importe_total || null,
           datos_extraidos: datosCompletos,
         }])
