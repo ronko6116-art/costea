@@ -1,6 +1,6 @@
 const LLAMA_API = 'https://api.cloud.llamaindex.ai';
-const POLL_MAX_ATTEMPTS = 3;
-const POLL_INTERVAL_MS = 2000;
+const POLL_MAX_ATTEMPTS = 5;
+const POLL_INTERVAL_MS = 1500;
 
 const DATA_SCHEMA = {
   type: 'object',
