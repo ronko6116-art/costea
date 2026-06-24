@@ -30,6 +30,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [mostrarSelector, setMostrarSelector] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [showNewRestaurant, setShowNewRestaurant] = useState(false);
+  const [newRestaurantName, setNewRestaurantName] = useState('');
+  const [creandoRest, setCreandoRest] = useState(false);
 
   // Cargar restaurantes del usuario
   useEffect(() => {
@@ -102,6 +105,30 @@ export default function Dashboard() {
     setRestaurantes([nuevoRestaurante]);
     setRestauranteSeleccionado(nuevoRestaurante);
     setNeedsOnboarding(false);
+  };
+
+  const handleAddRestaurant = async () => {
+    if (!newRestaurantName.trim()) return;
+    setCreandoRest(true);
+    const { data, error } = await supabase
+      .from('restaurantes')
+      .insert([{
+        owner_id: session?.user?.id,
+        nombre: newRestaurantName.trim(),
+        pais: 'ES',
+        moneda: 'EUR',
+      }])
+      .select()
+      .single();
+    setCreandoRest(false);
+    if (error) {
+      alert('Error al crear restaurante: ' + error.message);
+      return;
+    }
+    setRestaurantes(prev => [...prev, data]);
+    setRestauranteSeleccionado(data);
+    setShowNewRestaurant(false);
+    setNewRestaurantName('');
   };
 
   // Formateador de moneda
@@ -180,6 +207,42 @@ export default function Dashboard() {
                     {r.nombre}
                   </button>
                 ))}
+                <div className="border-t border-warm-gray/10">
+                  {showNewRestaurant ? (
+                    <div className="px-4 py-3 space-y-2">
+                      <input
+                        type="text"
+                        value={newRestaurantName}
+                        onChange={(e) => setNewRestaurantName(e.target.value)}
+                        placeholder="Nombre del nuevo restaurante"
+                        className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-cream focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleAddRestaurant}
+                          disabled={creandoRest || !newRestaurantName.trim()}
+                          className="flex-1 bg-terracotta text-white rounded-lg py-2 text-sm font-semibold disabled:opacity-60"
+                        >
+                          {creandoRest ? 'Creando...' : 'Crear'}
+                        </button>
+                        <button
+                          onClick={() => { setShowNewRestaurant(false); setNewRestaurantName(''); }}
+                          className="px-4 py-2 text-sm text-warm-gray hover:text-ink"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowNewRestaurant(true)}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-terracotta hover:bg-cream transition-colors"
+                    >
+                      + Añadir restaurante
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>

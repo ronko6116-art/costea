@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
-import { ArrowLeft, Plus, Clock, CheckCircle2, AlertCircle, FileSearch } from 'lucide-react';
+import { ArrowLeft, Plus, Clock, CheckCircle2, AlertCircle, FileSearch, Trash2 } from 'lucide-react';
 
 const ESTADO_CONFIG = {
   pendiente: { label: 'Pendiente', icon: Clock, color: 'text-warm-gray', bg: 'bg-warm-gray/10' },
@@ -35,10 +35,22 @@ export default function FacturaList() {
   const formatoMoneda = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
 
   const handleClick = (factura) => {
-    // Una factura 'pendiente' (recién creada con el JSON) va directa a revisión.
-    // Una ya 'procesada' por ahora es solo informativa (sin pantalla de detalle todavía).
     if (factura.estado === 'pendiente' || factura.estado === 'revision_manual') {
       navigate(`/facturas/${factura.id}/revision`);
+    }
+  };
+
+  const handleDelete = async (e, factura) => {
+    e.stopPropagation();
+    if (!window.confirm(`¿Eliminar la factura de ${factura.proveedor?.nombre || 'proveedor desconocido'}? Esta acción no se puede deshacer.`)) return;
+    const { error } = await supabase
+      .from('facturas')
+      .delete()
+      .eq('id', factura.id);
+    if (error) {
+      alert(error.message);
+    } else {
+      setFacturas(prev => prev.filter(f => f.id !== factura.id));
     }
   };
 
@@ -105,10 +117,19 @@ export default function FacturaList() {
                       {f.importe_total && <span>· {formatoMoneda.format(f.importe_total)}</span>}
                     </div>
                   </div>
-                  <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full shrink-0 ${config.color} ${config.bg}`}>
-                    <Icon className="h-3.5 w-3.5" />
-                    {config.label}
-                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full ${config.color} ${config.bg}`}>
+                      <Icon className="h-3.5 w-3.5" />
+                      {config.label}
+                    </span>
+                    <button
+                      onClick={(e) => handleDelete(e, f)}
+                      className="p-1.5 rounded-full hover:bg-red-50 text-warm-gray hover:text-red-500 transition-colors"
+                      aria-label="Eliminar factura"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               );
             })}

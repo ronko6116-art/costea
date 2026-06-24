@@ -7,6 +7,15 @@ import {
   TrendingUp, TrendingDown, ChevronDown
 } from 'lucide-react';
 
+// --- Calcular precio de referencia por kg / litro ---
+function precioReferencia(precio, unidad) {
+  if (!precio || !unidad) return null;
+  if (unidad === 'g') return precio * 1000;
+  if (unidad === 'ml') return precio * 1000;
+  if (unidad === 'kg' || unidad === 'l') return precio;
+  return null;
+}
+
 // --- Utilidad de matching difuso, sin dependencias externas ---
 // Compara nombres normalizados (sin acentos, minúsculas, sin plurales triviales)
 // y decide si dos strings probablemente se refieren al mismo ingrediente.
@@ -356,6 +365,8 @@ function LineaFactura({ linea, ingredientesDisponibles, formatoMoneda, onChange 
   const [mostrarSelector, setMostrarSelector] = useState(false);
 
   const tieneVariacion = linea.variacion_precio !== null && linea.variacion_precio !== undefined;
+  const refPrecio = precioReferencia(linea.precio_unitario, linea.unidad_medida);
+  const refLabel = linea.unidad_medida === 'g' || linea.unidad_medida === 'kg' ? 'kg' : 'l';
 
   return (
     <div className="bg-white rounded-xl border border-warm-gray/10 p-4 shadow-sm">
@@ -364,6 +375,11 @@ function LineaFactura({ linea, ingredientesDisponibles, formatoMoneda, onChange 
           <p className="font-medium text-ink">{linea.nombre_producto}</p>
           <p className="text-xs text-warm-gray mt-0.5">
             {linea.cantidad} {linea.unidad_medida} · {formatoMoneda.format(linea.precio_unitario)}/{linea.unidad_medida}
+            {refPrecio !== null && (
+              <span className="ml-2 font-semibold text-olive-dark">
+                ({formatoMoneda.format(refPrecio)}/{refLabel})
+              </span>
+            )}
           </p>
         </div>
       </div>

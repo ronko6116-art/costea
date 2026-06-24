@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { UtensilsCrossed, Menu, X } from 'lucide-react';
 
-export default function Navbar({ onLoginClick, onSignupClick }) {
+export default function Navbar({ onLoginClick, onSignupClick, isLoggedIn, onDashboardClick }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -24,18 +24,29 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
         </nav>
 
         <div className="hidden items-center gap-3 sm:flex">
-          <button
-            onClick={onLoginClick}
-            className="rounded-full border border-olive px-4 py-2 text-sm font-semibold text-olive transition-colors hover:bg-olive/8"
-          >
-            Iniciar sesión
-          </button>
-          <button
-            onClick={onSignupClick}
-            className="rounded-full bg-terracotta px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_18px_-8px_rgba(231,111,81,0.7)] transition-colors hover:bg-terracotta-dark"
-          >
-            Crear cuenta
-          </button>
+          {isLoggedIn ? (
+            <button
+              onClick={onDashboardClick}
+              className="rounded-full bg-terracotta px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_18px_-8px_rgba(231,111,81,0.7)] transition-colors hover:bg-terracotta-dark"
+            >
+              Dashboard
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={onLoginClick}
+                className="rounded-full border border-olive px-4 py-2 text-sm font-semibold text-olive transition-colors hover:bg-olive/8"
+              >
+                Iniciar sesión
+              </button>
+              <button
+                onClick={onSignupClick}
+                className="rounded-full bg-terracotta px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_18px_-8px_rgba(231,111,81,0.7)] transition-colors hover:bg-terracotta-dark"
+              >
+                Crear cuenta
+              </button>
+            </>
+          )}
         </div>
 
         <button
@@ -58,18 +69,29 @@ export default function Navbar({ onLoginClick, onSignupClick }) {
             </a>
           </nav>
           <div className="flex flex-col gap-2">
-            <button
-              onClick={() => { setMobileOpen(false); onLoginClick(); }}
-              className="rounded-full border border-olive px-4 py-2 text-sm font-semibold text-olive"
-            >
-              Iniciar sesión
-            </button>
-            <button
-              onClick={() => { setMobileOpen(false); onSignupClick(); }}
-              className="rounded-full bg-terracotta px-4 py-2 text-sm font-semibold text-white"
-            >
-              Crear cuenta
-            </button>
+            {isLoggedIn ? (
+              <button
+                onClick={() => { setMobileOpen(false); onDashboardClick(); }}
+                className="rounded-full bg-terracotta px-4 py-2 text-sm font-semibold text-white"
+              >
+                Dashboard
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => { setMobileOpen(false); onLoginClick(); }}
+                  className="rounded-full border border-olive px-4 py-2 text-sm font-semibold text-olive"
+                >
+                  Iniciar sesión
+                </button>
+                <button
+                  onClick={() => { setMobileOpen(false); onSignupClick(); }}
+                  className="rounded-full bg-terracotta px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Crear cuenta
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
