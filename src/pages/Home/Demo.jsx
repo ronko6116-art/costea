@@ -53,7 +53,7 @@ export default function Demo({ onLoginClick, onSignupClick }) {
             </ul>
             <div className="ticket-footer">
               <span>3 facturas seguidas al alza</span>
-              <span>−8 pts</span>
+              <span>−8%</span>
             </div>
           </div>
         </div>
