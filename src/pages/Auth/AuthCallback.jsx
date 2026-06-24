@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 
@@ -8,46 +8,75 @@ export default function AuthCallback() {
   const [isRecovery, setIsRecovery] = useState(false);
   const [loading, setLoading] = useState(false);
   const [newPassword, setNewPassword] = useState('');
+  const handledRef = useRef(false);
 
   useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        // Detectar tipo en query o en hash (Supabase puede poner parámetros en el hash)
-        const searchParams = new URLSearchParams(window.location.search);
-        const hash = window.location.hash.replace(/^#/, '');
-        const hashParams = new URLSearchParams(hash);
-        const type = searchParams.get('type') || hashParams.get('type');
+    if (handledRef.current) return;
 
-        if (type === 'recovery') {
-          // Fluir de recuperación: obtener sesión (Supabase puede insertar tokens en la URL)
-          setIsRecovery(true);
-          setMessage('Procesando recuperación de contraseña...');
-          await supabase.auth.getSession();
+    const searchParams = new URLSearchParams(window.location.search);
+    const code = searchParams.get('code');
+    const type = searchParams.get('type');
+
+    if (type === 'recovery') {
+      setIsRecovery(true);
+      setMessage('Procesando recuperación de contraseña...');
+
+      if (code) {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+          if (event === 'PASSWORD_RECOVERY') {
+            setMessage('Introduce tu nueva contraseña');
+            subscription.unsubscribe();
+          }
+        });
+        const timeout = setTimeout(() => {
+          subscription.unsubscribe();
           setMessage('Introduce tu nueva contraseña');
-          return;
+        }, 5000);
+        return () => {
+          subscription.unsubscribe();
+          clearTimeout(timeout);
+        };
+      }
+
+      setMessage('Introduce tu nueva contraseña');
+      return;
+    }
+
+    const handleCallback = async () => {
+      let attempts = 0;
+      const maxAttempts = 25;
+
+      const checkSession = async () => {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session) {
+          handledRef.current = true;
+          setMessage('¡Login exitoso! Redirigiendo...');
+          setTimeout(() => navigate('/dashboard', { replace: true }), 500);
+          return true;
         }
+        return false;
+      };
 
-        // Comportamiento por defecto (OAuth / sign-in)
-        const { data, error } = await supabase.auth.getSession();
+      if (await checkSession()) return;
 
-        if (error || !data.session) {
-          console.error('Error en callback:', error);
-          setMessage('Error al procesar la autenticación');
-          setTimeout(() => navigate('/', { replace: true }), 1500);
-          return;
-        }
-
-        setMessage('¡Login exitoso! Redirigiendo...');
-        setTimeout(() => navigate('/dashboard', { replace: true }), 800);
-      } catch (err) {
-        console.error(err);
-        navigate('/', { replace: true });
+      if (code) {
+        const interval = setInterval(async () => {
+          attempts++;
+          if (await checkSession() || attempts >= maxAttempts) {
+            clearInterval(interval);
+            if (!handledRef.current) {
+              setMessage('Error al procesar la autenticación');
+              setTimeout(() => navigate('/login', { replace: true }), 1500);
+            }
+          }
+        }, 200);
+      } else {
+        setMessage('Error al procesar la autenticación');
+        setTimeout(() => navigate('/login', { replace: true }), 1500);
       }
     };
 
-    // Pequeño delay para que Supabase procese la URL
-    const timer = setTimeout(handleCallback, 400);
-    return () => clearTimeout(timer);
+    handleCallback();
   }, [navigate]);
 
   const handleSetPassword = async (e) => {

@@ -10,6 +10,12 @@ export default defineConfig({
   ],
   server: {
     port: 5174,
-    strictPort: true, // Si el puerto 5174 está ocupado, dará error en vez de saltar al 5175
+    strictPort: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
   }
 })

@@ -13,6 +13,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,        // Detecta tokens en URL/hash
-    flowType: 'implicit',            // Compatible con cualquier navegador en móvil
+    flowType: 'pkce',                // PKCE: más seguro, sin tokens en la URL
   },
 });

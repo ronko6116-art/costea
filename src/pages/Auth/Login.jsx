@@ -46,13 +46,13 @@ export default function Login({ embedded = false, initialMode = 'login' }) {
         if (error) throw error;
         if (data?.session) navigate('/dashboard');
       } else {
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/dashboard`, captchaToken },
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback`, captchaToken },
         });
         if (error) throw error;
-        navigate('/dashboard');
+        setSuccessMsg('Cuenta creada con éxito. Revisa tu correo para confirmar.');
       }
     } catch (err) {
       setErrorMsg(err?.message ?? 'Ocurrió un error');

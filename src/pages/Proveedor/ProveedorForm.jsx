@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
-import { ArrowLeft, Save, Trash2, Building2, Phone, MapPin, StickyNote } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Building2, Phone, MapPin, StickyNote, ChevronDown } from 'lucide-react';
 
 const ESTADO_INICIAL = {
   nombre: '',
@@ -193,193 +193,185 @@ export default function ProveedorForm() {
                 placeholder="Ej: Mercados García, Pescados Martínez..."
               />
             </div>
-
-            <div>
-              <label className={labelClass}>
-                CIF / NIF <span className="font-normal text-warm-gray">(opcional)</span>
-              </label>
-              <input
-                type="text"
-                name="cif"
-                value={formData.cif}
-                onChange={handleChange}
-                maxLength={20}
-                className={inputClass}
-                placeholder="B12345678"
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>
-                Sitio web <span className="font-normal text-warm-gray">(opcional)</span>
-              </label>
-              <input
-                type="url"
-                name="web"
-                value={formData.web}
-                onChange={handleChange}
-                className={inputClass}
-                placeholder="https://proveedor.com"
-              />
-            </div>
           </fieldset>
 
-          {/* ===== Sección: Contacto ===== */}
-          <fieldset className="space-y-4">
-            <legend className="flex items-center gap-2 text-sm font-semibold text-ink-soft uppercase tracking-wide mb-2">
-              <Phone className="h-4 w-4" />
-              Contacto
-            </legend>
+          {/* ===== Más datos (opcional) ===== */}
+          <details className="group">
+            <summary className="flex items-center gap-2 text-sm font-semibold text-ink-soft cursor-pointer hover:text-ink transition-colors list-none [&::-webkit-details-marker]:hidden">
+              <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+              Más datos (opcional)
+            </summary>
 
-            <div>
-              <label className={labelClass}>
-                Persona de contacto <span className="font-normal text-warm-gray">(opcional)</span>
-              </label>
-              <input
-                type="text"
-                name="persona_contacto"
-                value={formData.persona_contacto}
-                onChange={handleChange}
-                maxLength={80}
-                className={inputClass}
-                placeholder="Ej: Juan Pérez"
-              />
-            </div>
+            <div className="mt-4 space-y-6">
+              {/* Identificación extra */}
+              <fieldset className="space-y-4">
+                <div>
+                  <label className={labelClass}>CIF / NIF</label>
+                  <input
+                    type="text"
+                    name="cif"
+                    value={formData.cif}
+                    onChange={handleChange}
+                    maxLength={20}
+                    className={inputClass}
+                    placeholder="B12345678"
+                  />
+                </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelClass}>
-                  Teléfono <span className="font-normal text-warm-gray">(opc.)</span>
-                </label>
-                <input
-                  type="tel"
-                  name="telefono"
-                  value={formData.telefono}
+                <div>
+                  <label className={labelClass}>Sitio web</label>
+                  <input
+                    type="url"
+                    name="web"
+                    value={formData.web}
+                    onChange={handleChange}
+                    className={inputClass}
+                    placeholder="https://proveedor.com"
+                  />
+                </div>
+              </fieldset>
+
+              {/* Contacto */}
+              <fieldset className="space-y-4">
+                <legend className="flex items-center gap-2 text-sm font-semibold text-ink-soft uppercase tracking-wide mb-2">
+                  <Phone className="h-4 w-4" />
+                  Contacto
+                </legend>
+
+                <div>
+                  <label className={labelClass}>Persona de contacto</label>
+                  <input
+                    type="text"
+                    name="persona_contacto"
+                    value={formData.persona_contacto}
+                    onChange={handleChange}
+                    maxLength={80}
+                    className={inputClass}
+                    placeholder="Ej: Juan Pérez"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Teléfono</label>
+                    <input
+                      type="tel"
+                      name="telefono"
+                      value={formData.telefono}
+                      onChange={handleChange}
+                      maxLength={20}
+                      className={inputClass}
+                      placeholder="600 123 456"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Email factura.</label>
+                    <input
+                      type="email"
+                      name="email_facturacion"
+                      value={formData.email_facturacion}
+                      onChange={handleChange}
+                      className={inputClass}
+                      placeholder="facturas@..."
+                    />
+                  </div>
+                </div>
+              </fieldset>
+
+              {/* Dirección */}
+              <fieldset className="space-y-4">
+                <legend className="flex items-center gap-2 text-sm font-semibold text-ink-soft uppercase tracking-wide mb-2">
+                  <MapPin className="h-4 w-4" />
+                  Dirección
+                </legend>
+
+                <div>
+                  <label className={labelClass}>Dirección</label>
+                  <input
+                    type="text"
+                    name="direccion"
+                    value={formData.direccion}
+                    onChange={handleChange}
+                    maxLength={120}
+                    className={inputClass}
+                    placeholder="Calle, número"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Ciudad</label>
+                    <input
+                      type="text"
+                      name="ciudad"
+                      value={formData.ciudad}
+                      onChange={handleChange}
+                      maxLength={60}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>C. Postal</label>
+                    <input
+                      type="text"
+                      name="codigo_postal"
+                      value={formData.codigo_postal}
+                      onChange={handleChange}
+                      maxLength={10}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Provincia</label>
+                    <input
+                      type="text"
+                      name="provincia"
+                      value={formData.provincia}
+                      onChange={handleChange}
+                      maxLength={60}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>País</label>
+                    <select
+                      name="pais"
+                      value={formData.pais}
+                      onChange={handleChange}
+                      className={inputClass}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <option value="ES">España</option>
+                      <option value="PT">Portugal</option>
+                      <option value="FR">Francia</option>
+                      <option value="IT">Italia</option>
+                      <option value="OTRO">Otro</option>
+                    </select>
+                  </div>
+                </div>
+              </fieldset>
+
+              {/* Notas */}
+              <fieldset className="space-y-4">
+                <legend className="flex items-center gap-2 text-sm font-semibold text-ink-soft uppercase tracking-wide mb-2">
+                  <StickyNote className="h-4 w-4" />
+                  Notas
+                </legend>
+                <textarea
+                  name="notas"
+                  value={formData.notas}
                   onChange={handleChange}
-                  maxLength={20}
-                  className={inputClass}
-                  placeholder="600 123 456"
+                  rows={3}
+                  maxLength={300}
+                  className={`${inputClass} resize-none`}
+                  placeholder="Ej: entrega los lunes, mínimo 50€, descuento por volumen..."
                 />
-              </div>
-              <div>
-                <label className={labelClass}>
-                  Email factura. <span className="font-normal text-warm-gray">(opc.)</span>
-                </label>
-                <input
-                  type="email"
-                  name="email_facturacion"
-                  value={formData.email_facturacion}
-                  onChange={handleChange}
-                  className={inputClass}
-                  placeholder="facturas@..."
-                />
-              </div>
+              </fieldset>
             </div>
-            <p className="text-xs text-warm-gray -mt-2">
-              El email de facturación servirá en el futuro para reenviar facturas directamente a Costea.
-            </p>
-          </fieldset>
-
-          {/* ===== Sección: Dirección ===== */}
-          <fieldset className="space-y-4">
-            <legend className="flex items-center gap-2 text-sm font-semibold text-ink-soft uppercase tracking-wide mb-2">
-              <MapPin className="h-4 w-4" />
-              Dirección
-            </legend>
-
-            <div>
-              <label className={labelClass}>
-                Dirección <span className="font-normal text-warm-gray">(opcional)</span>
-              </label>
-              <input
-                type="text"
-                name="direccion"
-                value={formData.direccion}
-                onChange={handleChange}
-                maxLength={120}
-                className={inputClass}
-                placeholder="Calle, número"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelClass}>
-                  Ciudad <span className="font-normal text-warm-gray">(opc.)</span>
-                </label>
-                <input
-                  type="text"
-                  name="ciudad"
-                  value={formData.ciudad}
-                  onChange={handleChange}
-                  maxLength={60}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>
-                  C. Postal <span className="font-normal text-warm-gray">(opc.)</span>
-                </label>
-                <input
-                  type="text"
-                  name="codigo_postal"
-                  value={formData.codigo_postal}
-                  onChange={handleChange}
-                  maxLength={10}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelClass}>
-                  Provincia <span className="font-normal text-warm-gray">(opc.)</span>
-                </label>
-                <input
-                  type="text"
-                  name="provincia"
-                  value={formData.provincia}
-                  onChange={handleChange}
-                  maxLength={60}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>País</label>
-                <select
-                  name="pais"
-                  value={formData.pais}
-                  onChange={handleChange}
-                  className={inputClass}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <option value="ES">España</option>
-                  <option value="PT">Portugal</option>
-                  <option value="FR">Francia</option>
-                  <option value="IT">Italia</option>
-                  <option value="OTRO">Otro</option>
-                </select>
-              </div>
-            </div>
-          </fieldset>
-
-          {/* ===== Sección: Notas ===== */}
-          <fieldset className="space-y-4">
-            <legend className="flex items-center gap-2 text-sm font-semibold text-ink-soft uppercase tracking-wide mb-2">
-              <StickyNote className="h-4 w-4" />
-              Notas
-            </legend>
-            <textarea
-              name="notas"
-              value={formData.notas}
-              onChange={handleChange}
-              rows={3}
-              maxLength={300}
-              className={`${inputClass} resize-none`}
-              placeholder="Ej: entrega los lunes, mínimo 50€, descuento por volumen..."
-            />
-          </fieldset>
+          </details>
 
           <div className="flex gap-3 pt-2">
             <button
