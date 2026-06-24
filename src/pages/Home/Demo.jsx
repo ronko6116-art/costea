@@ -39,16 +39,25 @@ export default function Demo({ onLoginClick, onSignupClick }) {
             <div className="ticket-divider" />
             <ul className="ticket-items">
               <li>
-                <Check className="h-4 w-4" />
-                <span>Risotto de hongos · 76%</span>
+                <span className="flex items-center gap-2">
+                  <Check className="h-4 w-4" />
+                  <span>Risotto de hongos</span>
+                </span>
+                <span className="font-semibold">76%</span>
               </li>
               <li>
-                <Check className="h-4 w-4" />
-                <span>Costilla braseada · 50%</span>
+                <span className="flex items-center gap-2">
+                  <Check className="h-4 w-4" />
+                  <span>Costilla braseada</span>
+                </span>
+                <span className="font-semibold">50%</span>
               </li>
               <li className="pending">
-                <span className="dot" />
-                <span>Tartar de atún · 39%</span>
+                <span className="flex items-center gap-2">
+                  <span className="dot" />
+                  <span>Tartar de atún</span>
+                </span>
+                <span className="font-semibold">39%</span>
               </li>
             </ul>
             <div className="ticket-footer">
