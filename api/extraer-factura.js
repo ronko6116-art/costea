@@ -76,7 +76,7 @@ export default async function handler(req, res) {
 
     let uploadRes;
     try {
-      uploadRes = await fetch(`${LLAMA_API}/api/v2/files`, {
+      uploadRes = await fetch(`${LLAMA_API}/api/v1/beta/files`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': contentType },
         body,
