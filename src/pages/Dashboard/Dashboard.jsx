@@ -11,11 +11,11 @@ import {
   Euro,
   ChevronDown,
   Home,
-  Receipt,
   Bell,
   User,
   Package,
-  Store
+  Store,
+  DollarSign
 } from 'lucide-react';
 import PlatoCard from '../../contexts/PlatoCard';
 import Onboarding from './Onboarding';
@@ -323,11 +323,11 @@ export default function Dashboard() {
           <span className="text-[10px] font-medium">Inicio</span>
         </button>
         <button
-          onClick={() => navigate('/facturas')}
+          onClick={() => navigate('/precios')}
           className="flex flex-col items-center text-warm-gray"
         >
-          <Receipt className="h-6 w-6" />
-          <span className="text-[10px] font-medium">Facturas</span>
+          <DollarSign className="h-6 w-6" />
+          <span className="text-[10px] font-medium">Precios</span>
         </button>
         <button className="flex flex-col items-center text-warm-gray relative">
           <Bell className="h-6 w-6" />
