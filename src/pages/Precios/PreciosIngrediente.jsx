@@ -1,10 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import {
-  ArrowLeft, Save, Search, ChevronRight,
+  ArrowLeft, Search, ChevronDown,
   TrendingUp, TrendingDown, Minus, Check, X, Loader2
 } from 'lucide-react';
+
+const ORDEN_CATEGORIAS = [
+  'Carnes',
+  'Pescados',
+  'Verduras',
+  'Frutas',
+  'Lácteos',
+  'Huevos',
+  'Legumbres',
+  'Cereales',
+  'Pastas',
+  'Congelados',
+  'Bebidas',
+  'Especias',
+  'Pan',
+  'Aceites',
+  'Salsas',
+  'Conservas',
+  'Dulces',
+  'Limpieza',
+];
 
 export default function PreciosIngrediente() {
   const navigate = useNavigate();
@@ -14,17 +35,10 @@ export default function PreciosIngrediente() {
   const [search, setSearch] = useState('');
   const [preciosEditando, setPreciosEditando] = useState({});
   const [editados, setEditados] = useState(new Set());
-  const [restauranteId, setRestauranteId] = useState(null);
+  const [categoriasAbiertas, setCategoriasAbiertas] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: rData } = await supabase
-        .from('restaurantes')
-        .select('id')
-        .limit(1)
-        .single();
-      if (rData) setRestauranteId(rData.id);
-
       const { data } = await supabase
         .from('ingredientes')
         .select('*, proveedor:proveedores(nombre)')
@@ -34,6 +48,46 @@ export default function PreciosIngrediente() {
     };
     fetchData();
   }, []);
+
+  const agrupados = useMemo(() => {
+    const mapa = {};
+    for (const ing of ingredientes) {
+      if (search && !ing.nombre.toLowerCase().includes(search.toLowerCase())) continue;
+      const cat = ing.categoria && ORDEN_CATEGORIAS.includes(ing.categoria)
+        ? ing.categoria
+        : (ing.categoria || 'Sin categoría');
+      if (!mapa[cat]) mapa[cat] = [];
+      mapa[cat].push(ing);
+    }
+    return mapa;
+  }, [ingredientes, search]);
+
+  const categoriasOrdenadas = useMemo(() => {
+    const ordenadas = ORDEN_CATEGORIAS.filter(c => agrupados[c]);
+    const resto = Object.keys(agrupados).filter(c => !ORDEN_CATEGORIAS.includes(c) && c !== 'Sin categoría').sort();
+    if (agrupados['Sin categoría']) resto.push('Sin categoría');
+    return [...ordenadas, ...resto];
+  }, [agrupados]);
+
+  useEffect(() => {
+    if (categoriasOrdenadas.length > 0 && !search) {
+      setCategoriasAbiertas(prev => {
+        if (Object.keys(prev).length === 0) {
+          return { [categoriasOrdenadas[0]]: true };
+        }
+        return prev;
+      });
+    }
+    if (search) {
+      const todasAbiertas = {};
+      categoriasOrdenadas.forEach(c => { todasAbiertas[c] = true; });
+      setCategoriasAbiertas(todasAbiertas);
+    }
+  }, [categoriasOrdenadas.length, search]);
+
+  const toggleCategoria = (cat) => {
+    setCategoriasAbiertas(prev => ({ ...prev, [cat]: !prev[cat] }));
+  };
 
   const handlePrecioChange = (id, valor) => {
     setPreciosEditando(prev => ({ ...prev, [id]: valor }));
@@ -61,18 +115,28 @@ export default function PreciosIngrediente() {
   const formatearMoneda = (valor) =>
     new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(valor || 0);
 
-  const getVariacion = (ing) => {
-    if (!ing.precio_anterior || ing.precio_anterior === 0) return null;
-    const diff = ((ing.precio_actual - ing.precio_anterior) / ing.precio_anterior) * 100;
-    return diff;
+  const formatearPrecioUnitario = (ing) => {
+    const precio = formatearMoneda(ing.precio_actual);
+    if (ing.unidad_medida === 'kg' || ing.unidad_medida === 'g' ||
+        ing.unidad_medida === 'l' || ing.unidad_medida === 'ml' ||
+        ing.unidad_medida === 'unidad' || ing.unidad_medida === 'docena') {
+      return `${precio} / ${ing.unidad_medida}`;
+    }
+    return precio;
   };
 
-  const filtered = ingredientes.filter(i =>
-    i.nombre.toLowerCase().includes(search.toLowerCase())
+  const getVariacion = (ing) => {
+    if (!ing.precio_anterior || ing.precio_anterior === 0) return null;
+    return ((ing.precio_actual - ing.precio_anterior) / ing.precio_anterior) * 100;
+  };
+
+  const ingredienteCount = useMemo(
+    () => Object.values(agrupados).reduce((sum, arr) => sum + arr.length, 0),
+    [agrupados]
   );
 
   return (
-    <div className="min-h-screen bg-cream pb-8">
+    <div className="min-h-screen bg-cream pb-24">
       <header className="sticky top-0 z-40 w-full border-b border-warm-gray/20 bg-cream/95 backdrop-blur-sm">
         <div className="flex items-center justify-between px-4 h-16">
           <button
@@ -105,125 +169,142 @@ export default function PreciosIngrediente() {
 
         {loading ? (
           <div className="space-y-2">
-            {[1,2,3,4,5].map(i => (
+            {[1,2,3].map(i => (
               <div key={i} className="bg-white rounded-xl p-4 shadow-sm animate-pulse">
                 <div className="h-5 bg-gray-200 rounded w-2/3 mb-2"></div>
                 <div className="h-4 bg-gray-100 rounded w-1/3"></div>
               </div>
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : ingredienteCount === 0 ? (
           <div className="text-center text-ink-soft py-12">
             <p>{search ? 'No hay ingredientes que coincidan.' : 'Aún no hay ingredientes.'}</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {filtered.map(ing => {
-              const editando = preciosEditando[ing.id] !== undefined;
-              const valorEditando = preciosEditando[ing.id];
-              const variacion = getVariacion(ing);
-              const guardando = saving === ing.id;
-
+          <div className="space-y-3">
+            {categoriasOrdenadas.map(cat => {
+              const items = agrupados[cat] || [];
+              const abierta = categoriasAbiertas[cat];
               return (
-                <div
-                  key={ing.id}
-                  className={`bg-white rounded-xl border shadow-sm overflow-hidden transition-colors ${
-                    editados.has(ing.id) ? 'border-olive/40 bg-olive/[0.02]' : 'border-warm-gray/10'
-                  }`}
-                >
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-ink truncate">{ing.nombre}</p>
-                        <div className="flex items-center gap-2 text-xs text-warm-gray mt-0.5">
-                          <span>{ing.unidad_medida}</span>
-                          {ing.proveedor && <span>· {ing.proveedor.nombre}</span>}
-                        </div>
-                      </div>
-                    </div>
+                <div key={cat} className="bg-white rounded-xl border border-warm-gray/10 overflow-hidden shadow-sm">
+                  <button
+                    onClick={() => toggleCategoria(cat)}
+                    className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-cream/50 transition-colors"
+                  >
+                    <span className="font-semibold text-ink text-sm">
+                      {cat}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs text-warm-gray">{items.length}</span>
+                      <ChevronDown className={`h-4 w-4 text-warm-gray transition-transform ${abierta ? 'rotate-180' : ''}`} />
+                    </span>
+                  </button>
 
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        {editando ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-warm-gray">€</span>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={valorEditando}
-                              onChange={(e) => handlePrecioChange(ing.id, e.target.value)}
-                              className="w-28 rounded-lg border border-terracotta/50 px-3 py-2 text-sm bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                              autoFocus
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleGuardar(ing.id);
-                                if (e.key === 'Escape') {
-                                  setPreciosEditando(prev => {
-                                    const copy = { ...prev };
-                                    delete copy[ing.id];
-                                    return copy;
-                                  });
-                                }
-                              }}
-                            />
-                            <button
-                              onClick={() => handleGuardar(ing.id)}
-                              disabled={guardando}
-                              className="p-2 rounded-full bg-olive text-white hover:bg-olive-dark transition-colors disabled:opacity-60"
-                              aria-label="Guardar"
-                            >
-                              {guardando ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Check className="h-4 w-4" />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setPreciosEditando(prev => {
-                                  const copy = { ...prev };
-                                  delete copy[ing.id];
-                                  return copy;
-                                });
-                              }}
-                              className="p-2 rounded-full hover:bg-red-50 text-warm-gray hover:text-red-500 transition-colors"
-                              aria-label="Cancelar"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setPreciosEditando(prev => ({
-                              ...prev,
-                              [ing.id]: ing.precio_actual || ''
-                            }))}
-                            className="flex items-center gap-2 group"
+                  {abierta && (
+                    <div className="divide-y divide-warm-gray/5">
+                      {items.map(ing => {
+                        const editando = preciosEditando[ing.id] !== undefined;
+                        const valorEditando = preciosEditando[ing.id];
+                        const variacion = getVariacion(ing);
+                        const guardando = saving === ing.id;
+
+                        return (
+                          <div
+                            key={ing.id}
+                            className={`px-4 py-3 transition-colors ${
+                              editados.has(ing.id) ? 'bg-olive/[0.02]' : ''
+                            }`}
                           >
-                            <span className="text-lg font-bold text-ink">
-                              {formatearMoneda(ing.precio_actual)}
-                            </span>
-                            <span className="text-xs text-warm-gray opacity-0 group-hover:opacity-100 transition-opacity">
-                              Editar
-                            </span>
-                          </button>
-                        )}
-                      </div>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-ink">{ing.nombre}</p>
+                                {ing.proveedor && (
+                                  <p className="text-xs text-warm-gray mt-0.5">{ing.proveedor.nombre}</p>
+                                )}
+                              </div>
 
-                      {variacion !== null && !editando && (
-                        <div className={`flex items-center gap-1 text-xs font-semibold ${
-                          variacion > 5 ? 'text-red-600' :
-                          variacion < -5 ? 'text-olive-dark' :
-                          'text-warm-gray'
-                        }`}>
-                          {variacion > 5 ? <TrendingUp className="h-3.5 w-3.5" /> :
-                           variacion < -5 ? <TrendingDown className="h-3.5 w-3.5" /> :
-                           <Minus className="h-3.5 w-3.5" />}
-                          {variacion > 0 ? '+' : ''}{variacion.toFixed(1)}%
-                        </div>
-                      )}
+                              <div className="flex items-center gap-2 shrink-0">
+                                {editando ? (
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      value={valorEditando}
+                                      onChange={(e) => handlePrecioChange(ing.id, e.target.value)}
+                                      className="w-24 rounded-lg border border-terracotta/50 px-2 py-1.5 text-sm bg-white text-right focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                                      autoFocus
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleGuardar(ing.id);
+                                        if (e.key === 'Escape') {
+                                          setPreciosEditando(prev => {
+                                            const copy = { ...prev };
+                                            delete copy[ing.id];
+                                            return copy;
+                                          });
+                                        }
+                                      }}
+                                    />
+                                    <button
+                                      onClick={() => handleGuardar(ing.id)}
+                                      disabled={guardando}
+                                      className="p-1.5 rounded-full bg-olive text-white hover:bg-olive-dark transition-colors disabled:opacity-60"
+                                    >
+                                      {guardando ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Check className="h-3.5 w-3.5" />
+                                      )}
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setPreciosEditando(prev => {
+                                          const copy = { ...prev };
+                                          delete copy[ing.id];
+                                          return copy;
+                                        });
+                                      }}
+                                      className="p-1.5 rounded-full hover:bg-red-50 text-warm-gray hover:text-red-500 transition-colors"
+                                    >
+                                      <X className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => setPreciosEditando(prev => ({
+                                      ...prev,
+                                      [ing.id]: ing.precio_actual || ''
+                                    }))}
+                                    className="group text-right"
+                                  >
+                                    <span className="font-bold text-ink">
+                                      {formatearPrecioUnitario(ing)}
+                                    </span>
+                                    <span className="block text-[10px] text-warm-gray opacity-0 group-hover:opacity-100 transition-opacity">
+                                      Editar
+                                    </span>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {variacion !== null && !editando && (
+                              <div className={`flex items-center gap-1 mt-1 text-xs font-semibold ${
+                                variacion > 5 ? 'text-red-600' :
+                                variacion < -5 ? 'text-olive-dark' :
+                                'text-warm-gray'
+                              }`}>
+                                {variacion > 5 ? <TrendingUp className="h-3 w-3" /> :
+                                 variacion < -5 ? <TrendingDown className="h-3 w-3" /> :
+                                 <Minus className="h-3 w-3" />}
+                                {variacion > 0 ? '+' : ''}{variacion.toFixed(1)}%
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
+                  )}
                 </div>
               );
             })}
