@@ -141,6 +141,11 @@ export default function FacturaUpload() {
       reader.readAsDataURL(file);
     });
 
+  const ESPERA_POLLING_MS = 2000;
+  const POLLING_MAX_INTENTOS = 45; // ~90s de margen total antes de avisar al usuario
+
+  const esperar = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
   const handleExtraerOcr = async () => {
     setError(null);
     setExtrayendoOcr(true);
@@ -163,8 +168,33 @@ export default function FacturaUpload() {
       if (!res.ok) {
         throw new Error(data.error || `Error del servidor (${res.status})`);
       }
+      if (!data.job_id) {
+        throw new Error('El servidor no devolvió un identificador de trabajo (job_id).');
+      }
 
-      setJsonTexto(JSON.stringify(data.datos_extraidos, null, 2));
+      // El job se procesa de forma asíncrona en LlamaParse. En vez de que una
+      // función serverless se quede esperando (y arriesgue el timeout de
+      // Vercel), preguntamos su estado desde el navegador cada ~2s.
+      for (let intento = 0; intento < POLLING_MAX_INTENTOS; intento++) {
+        await esperar(ESPERA_POLLING_MS);
+
+        const pollRes = await fetch(`/api/estado-extraccion?jobId=${encodeURIComponent(data.job_id)}`);
+        const pollData = await pollRes.json();
+
+        if (!pollRes.ok) {
+          throw new Error(pollData.error || `Error consultando el estado (${pollRes.status})`);
+        }
+        if (pollData.status === 'completado') {
+          setJsonTexto(JSON.stringify(pollData.datos_extraidos, null, 2));
+          return;
+        }
+        if (pollData.status === 'fallido') {
+          throw new Error(`La extracción falló: ${pollData.error || 'motivo desconocido'}`);
+        }
+        // 'pendiente' -> seguimos esperando y volvemos a preguntar
+      }
+
+      throw new Error('La extracción está tardando más de lo normal. Inténtalo de nuevo o pega el JSON manualmente.');
     } catch (err) {
       const msg = err.message || '';
       if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('502') || msg.includes('503')) {

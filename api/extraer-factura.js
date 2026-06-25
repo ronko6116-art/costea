@@ -1,6 +1,4 @@
 const LLAMA_API = 'https://api.cloud.llamaindex.ai';
-const POLL_MAX_ATTEMPTS = 5;
-const POLL_INTERVAL_MS = 1500;
 
 const DATA_SCHEMA = {
   type: 'object',
@@ -111,32 +109,10 @@ export default async function handler(req, res) {
     let job;
     try { job = await extractRes.json(); } catch (e) { return res.status(500).json({ error: 'extract response inválida: ' + e.message }); }
 
-    for (let i = 0; i < POLL_MAX_ATTEMPTS; i++) {
-      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-      let pollRes;
-      try {
-        pollRes = await fetch(`${LLAMA_API}/api/v2/extract/${job.id}?project_id=${projectId}&expand=extract_metadata`, {
-          headers: { Authorization: `Bearer ${apiKey}` },
-        });
-      } catch (e) { return res.status(500).json({ error: `poll ${i} fetch falló: ${e.message}` }); }
-
-      if (!pollRes.ok) {
-        const text = await pollRes.text().catch(() => '?');
-        return res.status(500).json({ error: `poll ${i} ${pollRes.status}: ${text.slice(0, 300)}` });
-      }
-
-      let data;
-      try { data = await pollRes.json(); } catch (e) { return res.status(500).json({ error: `poll ${i} response inválida: ${e.message}` }); }
-
-      if (data.status === 'COMPLETED') {
-        return res.status(200).json({ datos_extraidos: data.extract_result, meta: { job_id: job.id } });
-      }
-      if (data.status === 'FAILED') {
-        return res.status(500).json({ error: `extracción falló: ${data.error || 'desconocido'}` });
-      }
-    }
-
-    return res.status(500).json({ error: 'timeout' });
+    // No hacemos polling aquí: devolvemos el job_id de inmediato para que el
+    // navegador consulte el estado en /api/estado-extraccion. Así esta función
+    // siempre responde en menos de 1-2s, sin importar cuánto tarde LlamaParse.
+    return res.status(200).json({ job_id: job.id });
   } catch (err) {
     return res.status(500).json({ error: 'handler: ' + (err.message || JSON.stringify(err)) });
   }
