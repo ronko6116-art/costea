@@ -189,7 +189,7 @@ export default function PreciosIngrediente() {
                 <div key={cat} className="bg-white rounded-xl border border-warm-gray/10 overflow-hidden shadow-sm">
                   <button
                     onClick={() => toggleCategoria(cat)}
-                    className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-cream/50 transition-colors"
+                    className="w-full flex items-center justify-between px-4 py-3.5 bg-warm-gray/[0.07] hover:bg-warm-gray/[0.12] transition-colors border-b border-warm-gray/10"
                   >
                     <span className="font-semibold text-ink text-sm">
                       {cat}

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../supabaseClient';
-import { ArrowLeft, Plus, Edit, Trash2, Search } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, Search, DollarSign } from 'lucide-react';
 
 export default function IngredienteList() {
   const navigate = useNavigate();
@@ -83,6 +83,14 @@ export default function IngredienteList() {
           />
         </div>
 
+        <div className="mb-4 flex items-center gap-2 bg-olive/[0.06] border border-olive/15 rounded-xl px-4 py-2.5 text-sm text-ink-soft">
+          <DollarSign className="h-4 w-4 text-olive shrink-0" />
+          <span>Actualiza precios rápido desde </span>
+          <button onClick={() => navigate('/precios')} className="font-semibold text-olive hover:underline shrink-0">
+            Precios
+          </button>
+        </div>
+
         {error && <div className="text-red-600 text-sm mb-4">{error}</div>}
 
         {loading ? (
@@ -105,7 +113,6 @@ export default function IngredienteList() {
                   <p className="font-medium text-ink">{ing.nombre}</p>
                   <div className="flex flex-wrap gap-2 text-xs text-warm-gray">
                     <span>{ing.unidad_medida}</span>
-                    <span>{formatoMoneda.format(ing.precio_actual)}</span>
                     {ing.proveedor && <span>· {ing.proveedor.nombre}</span>}
                     {ing.categoria && <span>· {ing.categoria}</span>}
                   </div>
