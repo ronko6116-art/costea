@@ -24,6 +24,42 @@ const JSON_EJEMPLO = `{
   ]
 }`;
 
+// --- Reescalado/compresión de imágenes en el cliente ---------------------
+// Evita que fotos de 8-12MP (típicas de una cámara de móvil) lleguen al
+// endpoint de OCR. Reduce drásticamente el tamaño del base64 enviado y el
+// tiempo de subida a LlamaParse, sin perder legibilidad para el OCR.
+const MAX_DIMENSION_PX = 2000; // lado más largo tras el reescalado
+const CALIDAD_JPEG = 0.82;
+const UMBRAL_RESIZE_BYTES = 1.5 * 1024 * 1024; // no merece la pena tocar archivos ya pequeños
+
+async function redimensionarImagen(file) {
+  // 'imageOrientation: from-image' aplica la rotación EXIF de fotos de móvil
+  // de forma consistente entre navegadores (evita fotos "giradas").
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+
+  const escala = Math.min(1, MAX_DIMENSION_PX / bitmap.width, MAX_DIMENSION_PX / bitmap.height);
+  const anchoFinal = Math.round(bitmap.width * escala);
+  const altoFinal = Math.round(bitmap.height * escala);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = anchoFinal;
+  canvas.height = altoFinal;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(bitmap, 0, 0, anchoFinal, altoFinal);
+  bitmap.close();
+
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error('No se pudo comprimir la imagen.'))),
+      'image/jpeg',
+      CALIDAD_JPEG
+    );
+  });
+
+  const nombreFinal = file.name.replace(/\.[^./]+$/, '') + '.jpg';
+  return new File([blob], nombreFinal, { type: 'image/jpeg' });
+}
+
 export default function FacturaUpload() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -34,9 +70,10 @@ export default function FacturaUpload() {
   const [mostrarEjemplo, setMostrarEjemplo] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [extrayendoOcr, setExtrayendoOcr] = useState(false);
+  const [optimizandoImagen, setOptimizandoImagen] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleFileSelect = (e) => {
+  const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -51,11 +88,33 @@ export default function FacturaUpload() {
     }
 
     setError(null);
-    setArchivo(file);
-    setPreview(file.type !== 'application/pdf' ? URL.createObjectURL(file) : null);
+
+    // Los PDF no se reescalan (canvas no los puede decodificar) y los
+    // archivos ya pequeños no merecen el coste de recomprimirlos.
+    if (file.type === 'application/pdf' || file.size <= UMBRAL_RESIZE_BYTES) {
+      setArchivo(file);
+      setPreview(file.type !== 'application/pdf' ? URL.createObjectURL(file) : null);
+      return;
+    }
+
+    setOptimizandoImagen(true);
+    try {
+      const archivoOptimizado = await redimensionarImagen(file);
+      setArchivo(archivoOptimizado);
+      setPreview(URL.createObjectURL(archivoOptimizado));
+    } catch (err) {
+      // Si el reescalado falla (navegador antiguo, formato raro...) seguimos
+      // con el original en vez de bloquear al usuario.
+      console.warn('No se pudo reescalar la imagen, se usará el original:', err);
+      setArchivo(file);
+      setPreview(URL.createObjectURL(file));
+    } finally {
+      setOptimizandoImagen(false);
+    }
   };
 
   const handleQuitarArchivo = () => {
+    if (preview) URL.revokeObjectURL(preview);
     setArchivo(null);
     setPreview(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -226,6 +285,12 @@ export default function FacturaUpload() {
           </p>
 
           {!archivo ? (
+            optimizandoImagen ? (
+              <div className="flex flex-col items-center justify-center gap-2 bg-white rounded-xl border border-warm-gray/10 py-10">
+                <Loader2 className="h-6 w-6 animate-spin text-terracotta" />
+                <span className="text-sm text-warm-gray">Optimizando imagen...</span>
+              </div>
+            ) : (
             <div className="space-y-3">
               <label className="block">
                 <input
@@ -255,6 +320,7 @@ export default function FacturaUpload() {
                 </div>
               </label>
             </div>
+            )
           ) : (
             <div className="bg-white rounded-xl border border-warm-gray/10 p-3 shadow-sm relative">
               <button
