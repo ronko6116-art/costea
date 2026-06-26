@@ -12,10 +12,8 @@ import {
   ChevronDown,
   Home,
   Bell,
-  User,
-  Package,
   Store,
-  DollarSign
+  Plus
 } from 'lucide-react';
 import PlatoCard from '../../contexts/PlatoCard';
 import Onboarding from './Onboarding';
@@ -168,13 +166,22 @@ export default function Dashboard() {
             </span>
             <span className="text-lg font-bold text-ink">Costea</span>
           </div>
-          <button
-            onClick={handleLogout}
-            className="p-2 rounded-full hover:bg-olive/10 text-olive transition-colors"
-            aria-label="Cerrar sesión"
-          >
-            <LogOut className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/platos/nuevo')}
+              className="flex items-center gap-1 bg-terracotta text-white rounded-full px-4 py-2 text-sm font-semibold hover:bg-terracotta-dark transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Plato
+            </button>
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-full hover:bg-olive/10 text-olive transition-colors"
+              aria-label="Cerrar sesión"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -322,13 +329,6 @@ export default function Dashboard() {
           <Home className="h-6 w-6" />
           <span className="text-[10px] font-medium">Inicio</span>
         </button>
-        <button
-          onClick={() => navigate('/precios')}
-          className="flex flex-col items-center text-warm-gray"
-        >
-          <DollarSign className="h-6 w-6" />
-          <span className="text-[10px] font-medium">Precios</span>
-        </button>
         <button className="flex flex-col items-center text-warm-gray relative">
           <Bell className="h-6 w-6" />
           {alertas.length > 0 && (
@@ -337,13 +337,6 @@ export default function Dashboard() {
             </span>
           )}
           <span className="text-[10px] font-medium">Alertas</span>
-        </button>
-        <button
-            onClick={() => navigate('/ingredientes')}
-            className="flex flex-col items-center text-warm-gray"
-            >
-            <Package className="h-6 w-6" />
-            <span className="text-[10px] font-medium">Ingredientes</span>
         </button>
         <button
           onClick={() => navigate('/proveedores')}

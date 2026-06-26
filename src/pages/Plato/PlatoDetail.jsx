@@ -1,4 +1,3 @@
-// src/PlatoDetail.jsx
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -9,7 +8,11 @@ import {
   TrendingUp, 
   AlertTriangle, 
   Info,
-  Plus
+  Plus,
+  X,
+  Check,
+  Loader2,
+  Edit3
 } from 'lucide-react';
 
 export default function PlatoDetail() {
@@ -21,6 +24,22 @@ export default function PlatoDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Modal state
+  const [ingredienteEditando, setIngredienteEditando] = useState(null);
+  const [proveedores, setProveedores] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [mostrarNuevaCategoria, setMostrarNuevaCategoria] = useState(false);
+  const [savingIngrediente, setSavingIngrediente] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    nombre: '',
+    unidad_medida: 'kg',
+    precio_actual: '',
+    categoria: '',
+    proveedor_habitual_id: '',
+    cantidad: '',
+    merma: '0',
+  });
+
   useEffect(() => {
     const fetchData = async () => {
       if (!id || !session) {
@@ -30,22 +49,15 @@ export default function PlatoDetail() {
       }
 
       try {
-        console.log('Cargando plato ID:', id);
-        // 1. Obtener datos del plato (desde la vista)
         const { data: platoData, error: platoError } = await supabase
           .from('vista_coste_platos')
           .select('*')
           .eq('plato_id', id)
           .single();
 
-        if (platoError) {
-          console.error('Error al obtener plato:', platoError);
-          throw platoError;
-        }
-        console.log('Plato obtenido:', platoData);
+        if (platoError) throw platoError;
         setPlato(platoData);
 
-        // 2. Obtener receta con ingredientes
         const { data: recetaData, error: recetaError } = await supabase
           .from('receta_lineas')
           .select(`
@@ -56,54 +68,57 @@ export default function PlatoDetail() {
               id,
               nombre,
               unidad_medida,
-              precio_actual
+              precio_actual,
+              categoria,
+              proveedor_habitual_id
             )
           `)
           .eq('plato_id', id);
 
-        if (recetaError) {
-          console.error('Error al obtener receta:', recetaError);
-          throw recetaError;
-        }
-        console.log('Receta obtenida (raw):', recetaData);
+        if (recetaError) throw recetaError;
 
-        // Verificar que recetaData tiene elementos
         if (!recetaData || recetaData.length === 0) {
-          console.log('No hay ingredientes en la receta');
           setIngredientes([]);
-          setLoading(false);
-          return;
+        } else {
+          let costeTotal = 0;
+          const lineasConCoste = recetaData.map(linea => {
+            const ingrediente = linea.ingrediente;
+            if (!ingrediente) return null;
+            const precioUnitario = ingrediente.precio_actual || 0;
+            const cantidadConMerma = linea.cantidad * (1 + (linea.merma_pct || 0) / 100);
+            const costeLinea = precioUnitario * cantidadConMerma;
+            costeTotal += costeLinea;
+            return {
+              ...linea,
+              ingrediente,
+              cantidadConMerma,
+              costeLinea,
+              precioUnitario,
+            };
+          }).filter(Boolean);
+          setIngredientes(lineasConCoste);
         }
 
-        // Calcular coste por línea y total
-        let costeTotal = 0;
-        const lineasConCoste = recetaData.map(linea => {
-          // Acceder al ingrediente anidado
-          const ingrediente = linea.ingrediente;
-          if (!ingrediente) {
-            console.warn('Línea sin ingrediente:', linea);
-            return null;
-          }
-          const precioUnitario = ingrediente.precio_actual || 0;
-          const cantidadConMerma = linea.cantidad * (1 + (linea.merma_pct || 0) / 100);
-          const costeLinea = precioUnitario * cantidadConMerma;
-          costeTotal += costeLinea;
-          return {
-            ...linea,
-            ingrediente,
-            cantidadConMerma,
-            costeLinea,
-            precioUnitario,
-          };
-        }).filter(Boolean); // eliminar nulos
+        // Fetch suppliers and categories
+        const { data: provData } = await supabase
+          .from('proveedores')
+          .select('id, nombre')
+          .eq('restaurante_id', platoData.restaurante_id);
+        if (provData) setProveedores(provData);
 
-        console.log('Líneas con coste:', lineasConCoste);
-        console.log('Coste total calculado:', costeTotal);
+        const { data: catData } = await supabase
+          .from('ingredientes')
+          .select('categoria')
+          .not('categoria', 'is', null)
+          .eq('restaurante_id', platoData.restaurante_id)
+          .order('categoria');
+        if (catData) {
+          const unicas = [...new Set(catData.map(c => c.categoria).filter(Boolean))];
+          setCategorias(unicas);
+        }
 
-        setIngredientes(lineasConCoste);
         setLoading(false);
       } catch (err) {
-        console.error('Error en fetchData:', err);
         setError(err.message || 'Error al cargar los datos del plato');
         setLoading(false);
       }
@@ -111,6 +126,103 @@ export default function PlatoDetail() {
 
     fetchData();
   }, [id, session]);
+
+  const abrirModal = (linea) => {
+    setEditFormData({
+      nombre: linea.ingrediente.nombre || '',
+      unidad_medida: linea.ingrediente.unidad_medida || 'kg',
+      precio_actual: linea.ingrediente.precio_actual || '',
+      categoria: linea.ingrediente.categoria || '',
+      proveedor_habitual_id: linea.ingrediente.proveedor_habitual_id || '',
+      cantidad: linea.cantidad || '',
+      merma: linea.merma_pct || '0',
+    });
+    setMostrarNuevaCategoria(false);
+    setIngredienteEditando(linea);
+  };
+
+  const cerrarModal = () => {
+    setIngredienteEditando(null);
+    setMostrarNuevaCategoria(false);
+  };
+
+  const handleEditChange = (field, value) => {
+    setEditFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleGuardarIngrediente = async () => {
+    const linea = ingredienteEditando;
+    if (!linea) return;
+
+    setSavingIngrediente(true);
+
+    const now = new Date().toISOString();
+
+    const { error: ingError } = await supabase
+      .from('ingredientes')
+      .update({
+        nombre: editFormData.nombre,
+        unidad_medida: editFormData.unidad_medida,
+        precio_actual: parseFloat(editFormData.precio_actual) || 0,
+        categoria: editFormData.categoria || null,
+        proveedor_habitual_id: editFormData.proveedor_habitual_id || null,
+        updated_at: now,
+      })
+      .eq('id', linea.ingrediente.id);
+
+    if (ingError) {
+      alert('Error al guardar ingrediente: ' + ingError.message);
+      setSavingIngrediente(false);
+      return;
+    }
+
+    const { error: recError } = await supabase
+      .from('receta_lineas')
+      .update({
+        cantidad: parseFloat(editFormData.cantidad) || 0,
+        merma_pct: parseFloat(editFormData.merma) || 0,
+      })
+      .eq('id', linea.id);
+
+    if (recError) {
+      alert('Error al guardar receta: ' + recError.message);
+      setSavingIngrediente(false);
+      return;
+    }
+
+    // Update local state
+    const precioUnitario = parseFloat(editFormData.precio_actual) || 0;
+    const cantidad = parseFloat(editFormData.cantidad) || 0;
+    const merma = parseFloat(editFormData.merma) || 0;
+    const cantidadConMerma = cantidad * (1 + merma / 100);
+    const costeLinea = precioUnitario * cantidadConMerma;
+
+    setIngredientes(prev =>
+      prev.map(item =>
+        item.id === linea.id
+          ? {
+              ...item,
+              cantidad,
+              merma_pct: merma,
+              cantidadConMerma,
+              costeLinea,
+              precioUnitario,
+              ingrediente: {
+                ...item.ingrediente,
+                nombre: editFormData.nombre,
+                unidad_medida: editFormData.unidad_medida,
+                precio_actual: precioUnitario,
+                categoria: editFormData.categoria || null,
+                proveedor_habitual_id: editFormData.proveedor_habitual_id || null,
+              },
+            }
+          : item
+      )
+    );
+
+    cerrarModal();
+    setSavingIngrediente(false);
+  };
 
   const handleBack = () => {
     navigate('/dashboard');
@@ -236,7 +348,6 @@ export default function PlatoDetail() {
             </div>
           </div>
 
-          {/* Comparativa con objetivo */}
           {plato.margen_objetivo && (
             <div className="mt-3 pt-3 border-t border-warm-gray/10">
               <div className="flex items-center justify-between text-sm">
@@ -273,12 +384,19 @@ export default function PlatoDetail() {
           ) : (
             <div className="divide-y divide-warm-gray/10">
               {ingredientes.map((linea) => (
-                <div key={linea.id} className="px-5 py-3">
+                <div
+                  key={linea.id}
+                  className="px-5 py-3 cursor-pointer hover:bg-cream/50 transition-colors"
+                  onClick={() => abrirModal(linea)}
+                >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <p className="font-medium text-ink">
-                        {linea.ingrediente?.nombre || 'Ingrediente desconocido'}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-ink">
+                          {linea.ingrediente?.nombre || 'Ingrediente desconocido'}
+                        </p>
+                        <Edit3 className="h-3 w-3 text-warm-gray opacity-0 group-hover:opacity-100" />
+                      </div>
                       <div className="flex flex-wrap gap-2 text-xs text-warm-gray mt-0.5">
                         <span>
                           {linea.cantidad} {linea.ingrediente?.unidad_medida || 'u'}
@@ -307,7 +425,6 @@ export default function PlatoDetail() {
             </div>
           )}
 
-          {/* Total */}
           <div className="px-5 py-4 bg-cream/50 border-t border-warm-gray/10 flex justify-between items-center">
             <span className="font-semibold text-ink">Coste total</span>
             <span className="font-bold text-ink text-lg">
@@ -316,15 +433,200 @@ export default function PlatoDetail() {
           </div>
         </div>
 
-        {/* Nota informativa */}
         <div className="mt-4 flex items-start gap-2 text-xs text-warm-gray bg-white/50 p-3 rounded-xl border border-warm-gray/10">
           <Info className="h-4 w-4 shrink-0 mt-0.5" />
           <p>
-            El coste se calcula usando el precio actual de cada ingrediente.
-            Las mermas (desperdicio) se aplican como porcentaje sobre la cantidad base.
+            Toca cualquier ingrediente para editarlo. El coste y margen se recalculan automáticamente.
           </p>
         </div>
       </main>
+
+      {/* Modal de edición de ingrediente */}
+      {ingredienteEditando && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          onClick={cerrarModal}
+        >
+          <div className="fixed inset-0 bg-black/40 transition-opacity" />
+          <div
+            className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl p-5 sm:p-6 animate-slide-up"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-bold text-ink text-lg">Editar ingrediente</h3>
+              <button
+                onClick={cerrarModal}
+                className="p-2 -mr-2 rounded-full hover:bg-warm-gray/10 transition-colors"
+              >
+                <X className="h-5 w-5 text-warm-gray" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Nombre */}
+              <div>
+                <label className="block text-sm font-medium text-ink mb-1">Nombre</label>
+                <input
+                  type="text"
+                  value={editFormData.nombre}
+                  onChange={e => handleEditChange('nombre', e.target.value)}
+                  className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                />
+              </div>
+
+              {/* Unidad de medida */}
+              <div>
+                <label className="block text-sm font-medium text-ink mb-1">Unidad de medida</label>
+                <select
+                  value={editFormData.unidad_medida}
+                  onChange={e => handleEditChange('unidad_medida', e.target.value)}
+                  className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                >
+                  <option value="kg">kg</option>
+                  <option value="g">g</option>
+                  <option value="l">l</option>
+                  <option value="ml">ml</option>
+                  <option value="unidad">unidad</option>
+                  <option value="docena">docena</option>
+                </select>
+              </div>
+
+              {/* Precio actual */}
+              <div>
+                <label className="block text-sm font-medium text-ink mb-1">Precio actual (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editFormData.precio_actual}
+                  onChange={e => handleEditChange('precio_actual', e.target.value)}
+                  className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                />
+              </div>
+
+              {/* Categoría */}
+              <div>
+                <label className="block text-sm font-medium text-ink mb-1">Categoría</label>
+                {mostrarNuevaCategoria ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={editFormData.categoria}
+                      onChange={e => handleEditChange('categoria', e.target.value)}
+                      className="flex-1 rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                      placeholder="Nueva categoría..."
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setMostrarNuevaCategoria(false); setEditFormData(prev => ({ ...prev, categoria: '' })); }}
+                      className="text-sm text-warm-gray hover:text-ink px-2"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={editFormData.categoria}
+                    onChange={e => {
+                      if (e.target.value === '__nueva__') {
+                        setMostrarNuevaCategoria(true);
+                        setEditFormData(prev => ({ ...prev, categoria: '' }));
+                      } else {
+                        handleEditChange('categoria', e.target.value);
+                      }
+                    }}
+                    className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                  >
+                    <option value="">Sin categoría</option>
+                    {categorias.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                    <option value="__nueva__">+ Crear nueva...</option>
+                  </select>
+                )}
+              </div>
+
+              {/* Proveedor */}
+              <div>
+                <label className="block text-sm font-medium text-ink mb-1">Proveedor</label>
+                <select
+                  value={editFormData.proveedor_habitual_id}
+                  onChange={e => handleEditChange('proveedor_habitual_id', e.target.value)}
+                  className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                >
+                  <option value="">Ninguno</option>
+                  {proveedores.map(p => (
+                    <option key={p.id} value={p.id}>{p.nombre}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Separador */}
+              <div className="border-t border-warm-gray/10 pt-4">
+                <p className="text-xs font-semibold text-warm-gray uppercase tracking-wide mb-3">
+                  Receta
+                </p>
+
+                {/* Cantidad */}
+                <div>
+                  <label className="block text-sm font-medium text-ink mb-1">
+                    Cantidad ({editFormData.unidad_medida})
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editFormData.cantidad}
+                    onChange={e => handleEditChange('cantidad', e.target.value)}
+                    className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                  />
+                </div>
+
+                {/* Merma */}
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-ink mb-1">
+                    Merma (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    value={editFormData.merma}
+                    onChange={e => handleEditChange('merma', e.target.value)}
+                    className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                  />
+                  <p className="text-xs text-warm-gray mt-1">
+                    Porcentaje de desperdicio al preparar el ingrediente.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleGuardarIngrediente}
+                disabled={savingIngrediente}
+                className="flex-1 flex items-center justify-center gap-2 bg-olive text-white rounded-full py-3 font-semibold hover:bg-olive-dark transition-colors disabled:opacity-60"
+              >
+                {savingIngrediente ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Check className="h-5 w-5" />
+                )}
+                {savingIngrediente ? 'Guardando...' : 'Guardar'}
+              </button>
+              <button
+                onClick={cerrarModal}
+                className="flex-1 border border-warm-gray/30 text-ink-soft rounded-full py-3 font-medium hover:bg-warm-gray/5 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
