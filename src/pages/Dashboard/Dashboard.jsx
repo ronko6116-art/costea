@@ -13,7 +13,7 @@ import {
   Home,
   Bell,
   Store,
-  Plus
+  PlusCircle
 } from 'lucide-react';
 import PlatoCard from '../../contexts/PlatoCard';
 import Onboarding from './Onboarding';
@@ -172,7 +172,7 @@ export default function Dashboard() {
               onClick={() => navigate('/platos/nuevo')}
               className="flex items-center gap-1 bg-terracotta text-white rounded-full px-4 py-2 text-sm font-semibold hover:bg-terracotta-dark transition-colors"
             >
-              <Plus className="h-4 w-4" />
+              <PlusCircle className="h-4 w-4" />
               Plato
             </button>
             <button
@@ -341,6 +341,13 @@ export default function Dashboard() {
         >
           <Store className="h-6 w-6" />
           <span className="text-[10px] font-medium">Proveedores</span>
+        </button>
+        <button
+          onClick={() => navigate('/ingredientes/nuevo')}
+          className="flex flex-col items-center text-warm-gray"
+        >
+          <PlusCircle className="h-6 w-6" />
+          <span className="text-[10px] font-medium">Ingrediente</span>
         </button>
       </nav>
     </div>
