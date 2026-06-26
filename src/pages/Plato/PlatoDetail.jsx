@@ -229,14 +229,24 @@ export default function PlatoDetail() {
       return item;
     });
 
+    const nuevoMargen = plato.precio_venta > 0
+      ? parseFloat(((plato.precio_venta - nuevoCoste) / plato.precio_venta * 100).toFixed(2))
+      : 0;
+
     setIngredientes(ingredientesActualizados);
     setPlato(prev => ({
       ...prev,
       coste_total: nuevoCoste,
-      margen_pct: prev.precio_venta > 0
-        ? parseFloat(((prev.precio_venta - nuevoCoste) / prev.precio_venta * 100).toFixed(2))
-        : 0,
+      margen_pct: nuevoMargen,
     }));
+
+    if (plato.margen_objetivo > 0 && nuevoMargen >= plato.margen_objetivo) {
+      await supabase
+        .from('alertas')
+        .update({ estado: 'resuelta' })
+        .eq('plato_id', id)
+        .eq('estado', 'pendiente');
+    }
 
     cerrarModal();
     setSavingIngrediente(false);
@@ -270,7 +280,19 @@ export default function PlatoDetail() {
       return;
     }
 
-    setPlato(prev => ({ ...prev, ...localUpdates }));
+    const newPlato = { ...plato, ...localUpdates };
+    setPlato(newPlato);
+
+    const margenFinal = field === 'precio_venta' ? localUpdates.margen_pct : newPlato.margen_pct;
+    const objetivoFinal = field === 'margen_objetivo' ? localUpdates.margen_objetivo : newPlato.margen_objetivo;
+    if (objetivoFinal > 0 && margenFinal >= objetivoFinal) {
+      await supabase
+        .from('alertas')
+        .update({ estado: 'resuelta' })
+        .eq('plato_id', id)
+        .eq('estado', 'pendiente');
+    }
+
     setEditandoPrecioVenta(false);
     setEditandoMargenObj(false);
   };
