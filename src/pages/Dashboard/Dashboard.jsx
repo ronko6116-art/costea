@@ -47,7 +47,9 @@ export default function Dashboard() {
 
       setRestaurantes(data);
       if (data.length > 0) {
-        setRestauranteSeleccionado(data[0]);
+        const savedId = localStorage.getItem('restauranteId');
+        const saved = data.find(r => r.id === savedId);
+        setRestauranteSeleccionado(saved || data[0]);
       } else {
         setNeedsOnboarding(true);
       }
@@ -92,6 +94,13 @@ export default function Dashboard() {
     };
 
     fetchPlatosYAlertas();
+  }, [restauranteSeleccionado]);
+
+  // Persist restaurant selection across navigations
+  useEffect(() => {
+    if (restauranteSeleccionado) {
+      localStorage.setItem('restauranteId', restauranteSeleccionado.id);
+    }
   }, [restauranteSeleccionado]);
 
   const handleLogout = async () => {

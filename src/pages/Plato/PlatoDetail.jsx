@@ -24,6 +24,12 @@ export default function PlatoDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Inline editing state for plato fields
+  const [editandoPrecioVenta, setEditandoPrecioVenta] = useState(false);
+  const [tempPrecioVenta, setTempPrecioVenta] = useState('');
+  const [editandoMargenObj, setEditandoMargenObj] = useState(false);
+  const [tempMargenObj, setTempMargenObj] = useState('');
+
   // Modal state
   const [ingredienteEditando, setIngredienteEditando] = useState(null);
   const [proveedores, setProveedores] = useState([]);
@@ -197,31 +203,63 @@ export default function PlatoDetail() {
     const cantidadConMerma = cantidad * (1 + merma / 100);
     const costeLinea = precioUnitario * cantidadConMerma;
 
-    setIngredientes(prev =>
-      prev.map(item =>
-        item.id === linea.id
-          ? {
-              ...item,
-              cantidad,
-              merma_pct: merma,
-              cantidadConMerma,
-              costeLinea,
-              precioUnitario,
-              ingrediente: {
-                ...item.ingrediente,
-                nombre: editFormData.nombre,
-                unidad_medida: editFormData.unidad_medida,
-                precio_actual: precioUnitario,
-                categoria: editFormData.categoria || null,
-                proveedor_habitual_id: editFormData.proveedor_habitual_id || null,
-              },
-            }
-          : item
-      )
-    );
+    let nuevoCoste = 0;
+    const ingredientesActualizados = ingredientes.map(item => {
+      if (item.id === linea.id) {
+        const actualizado = {
+          ...item,
+          cantidad,
+          merma_pct: merma,
+          cantidadConMerma,
+          costeLinea,
+          precioUnitario,
+          ingrediente: {
+            ...item.ingrediente,
+            nombre: editFormData.nombre,
+            unidad_medida: editFormData.unidad_medida,
+            precio_actual: precioUnitario,
+            categoria: editFormData.categoria || null,
+            proveedor_habitual_id: editFormData.proveedor_habitual_id || null,
+          },
+        };
+        nuevoCoste += costeLinea;
+        return actualizado;
+      }
+      nuevoCoste += item.costeLinea;
+      return item;
+    });
+
+    setIngredientes(ingredientesActualizados);
+    setPlato(prev => ({
+      ...prev,
+      coste_total: nuevoCoste,
+      margen_pct: prev.precio_venta > 0
+        ? parseFloat(((prev.precio_venta - nuevoCoste) / prev.precio_venta * 100).toFixed(2))
+        : 0,
+    }));
 
     cerrarModal();
     setSavingIngrediente(false);
+  };
+
+  const handleGuardarPlatoField = async (field, value) => {
+    const updates = { updated_at: new Date().toISOString() };
+    if (field === 'precio_venta') updates.precio_venta = parseFloat(value) || 0;
+    if (field === 'margen_objetivo') updates.margen_objetivo = parseFloat(value) || 0;
+
+    const { error } = await supabase
+      .from('platos')
+      .update(updates)
+      .eq('id', id);
+
+    if (error) {
+      alert('Error al guardar: ' + error.message);
+      return;
+    }
+
+    setPlato(prev => ({ ...prev, ...updates }));
+    setEditandoPrecioVenta(false);
+    setEditandoMargenObj(false);
   };
 
   const handleBack = () => {
@@ -315,9 +353,46 @@ export default function PlatoDetail() {
           <div className="grid grid-cols-3 gap-4 mt-4">
             <div>
               <p className="text-xs text-warm-gray">Precio venta</p>
-              <p className="font-bold text-ink text-lg">
-                {formatoMoneda.format(plato.precio_venta)}
-              </p>
+              {editandoPrecioVenta ? (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-sm text-warm-gray">€</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={tempPrecioVenta}
+                    onChange={e => setTempPrecioVenta(e.target.value)}
+                    className="w-20 rounded-lg border border-terracotta/50 px-2 py-1.5 text-sm bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                    autoFocus
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleGuardarPlatoField('precio_venta', tempPrecioVenta);
+                      if (e.key === 'Escape') setEditandoPrecioVenta(false);
+                    }}
+                  />
+                  <button
+                    onClick={() => handleGuardarPlatoField('precio_venta', tempPrecioVenta)}
+                    className="p-1 rounded-full bg-olive text-white"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setEditandoPrecioVenta(false)}
+                    className="p-1 rounded-full hover:bg-red-50 text-warm-gray hover:text-red-500"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setTempPrecioVenta(plato.precio_venta); setEditandoPrecioVenta(true); }}
+                  className="font-bold text-ink text-lg group"
+                >
+                  {formatoMoneda.format(plato.precio_venta)}
+                  <span className="block text-[10px] text-warm-gray opacity-0 group-hover:opacity-100 transition-opacity text-left">
+                    Editar
+                  </span>
+                </button>
+              )}
             </div>
             <div>
               <p className="text-xs text-warm-gray">Coste actual</p>
@@ -352,7 +427,44 @@ export default function PlatoDetail() {
             <div className="mt-3 pt-3 border-t border-warm-gray/10">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-soft">Margen objetivo</span>
-                <span className="font-medium text-ink">{plato.margen_objetivo}%</span>
+                {editandoMargenObj ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      max="100"
+                      value={tempMargenObj}
+                      onChange={e => setTempMargenObj(e.target.value)}
+                      className="w-16 rounded-lg border border-terracotta/50 px-2 py-1.5 text-sm bg-white text-right focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                      autoFocus
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') handleGuardarPlatoField('margen_objetivo', tempMargenObj);
+                        if (e.key === 'Escape') setEditandoMargenObj(false);
+                      }}
+                    />
+                    <span className="text-sm text-warm-gray">%</span>
+                    <button
+                      onClick={() => handleGuardarPlatoField('margen_objetivo', tempMargenObj)}
+                      className="p-1 rounded-full bg-olive text-white"
+                    >
+                      <Check className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={() => setEditandoMargenObj(false)}
+                      className="p-1 rounded-full hover:bg-red-50 text-warm-gray hover:text-red-500"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setTempMargenObj(plato.margen_objetivo); setEditandoMargenObj(true); }}
+                    className="font-medium text-ink group"
+                  >
+                    {plato.margen_objetivo}%
+                  </button>
+                )}
               </div>
               <div className="flex items-center justify-between text-sm mt-1">
                 <span className="text-ink-soft">Diferencia</span>
