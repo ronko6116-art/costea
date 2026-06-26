@@ -243,20 +243,26 @@ export default function PlatoDetail() {
   };
 
   const handleGuardarPlatoField = async (field, value) => {
-    const updates = { updated_at: new Date().toISOString() };
+    const now = new Date().toISOString();
+    const dbUpdates = { updated_at: now };
+    const localUpdates = { updated_at: now };
 
     if (field === 'precio_venta') {
       const nuevoPrecio = parseFloat(value) || 0;
-      updates.precio_venta = nuevoPrecio;
-      updates.margen_pct = plato.coste_total > 0 && nuevoPrecio > 0
+      dbUpdates.precio_venta = nuevoPrecio;
+      localUpdates.precio_venta = nuevoPrecio;
+      localUpdates.margen_pct = plato.coste_total > 0 && nuevoPrecio > 0
         ? parseFloat(((nuevoPrecio - plato.coste_total) / nuevoPrecio * 100).toFixed(2))
         : 0;
     }
-    if (field === 'margen_objetivo') updates.margen_objetivo = parseFloat(value) || 0;
+    if (field === 'margen_objetivo') {
+      dbUpdates.margen_objetivo = parseFloat(value) || 0;
+      localUpdates.margen_objetivo = parseFloat(value) || 0;
+    }
 
     const { error } = await supabase
       .from('platos')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id);
 
     if (error) {
@@ -264,7 +270,7 @@ export default function PlatoDetail() {
       return;
     }
 
-    setPlato(prev => ({ ...prev, ...updates }));
+    setPlato(prev => ({ ...prev, ...localUpdates }));
     setEditandoPrecioVenta(false);
     setEditandoMargenObj(false);
   };
