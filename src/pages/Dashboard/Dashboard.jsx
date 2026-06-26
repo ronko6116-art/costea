@@ -258,7 +258,7 @@ export default function Dashboard() {
 
         {/* Alertas de margen computadas desde los platos */}
         {alertasMargen.length > 0 && (
-          <div className="mb-6 rounded-xl bg-linear-to-r from-red-50 to-red-100 border border-red-200 p-4 shadow-sm">
+          <div id="seccion-alertas" className="mb-6 rounded-xl bg-linear-to-r from-red-50 to-red-100 border border-red-200 p-4 shadow-sm">
             <div className="flex items-start gap-3">
               <div className="shrink-0 mt-0.5">
                 <AlertTriangle className="h-6 w-6 text-red-600" />
@@ -319,11 +319,14 @@ export default function Dashboard() {
 
       {/* Bottom navigation (mobile) */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-warm-gray/20 px-4 py-2 flex justify-around items-center">
-        <button className="flex flex-col items-center text-terracotta">
+        <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-terracotta">
           <Home className="h-6 w-6" />
           <span className="text-[10px] font-medium">Inicio</span>
         </button>
-        <button className="flex flex-col items-center text-warm-gray relative">
+        <button
+          onClick={() => document.getElementById('seccion-alertas')?.scrollIntoView({ behavior: 'smooth' })}
+          className="flex flex-col items-center text-warm-gray relative"
+        >
           <Bell className="h-6 w-6" />
           {alertasMargen.length > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center">
