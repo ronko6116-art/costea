@@ -240,14 +240,6 @@ export default function PlatoDetail() {
       margen_pct: nuevoMargen,
     }));
 
-    if (plato.margen_objetivo > 0 && nuevoMargen >= plato.margen_objetivo) {
-      await supabase
-        .from('alertas')
-        .update({ estado: 'resuelta' })
-        .eq('plato_id', id)
-        .eq('estado', 'pendiente');
-    }
-
     cerrarModal();
     setSavingIngrediente(false);
   };
@@ -282,16 +274,6 @@ export default function PlatoDetail() {
 
     const newPlato = { ...plato, ...localUpdates };
     setPlato(newPlato);
-
-    const margenFinal = field === 'precio_venta' ? localUpdates.margen_pct : newPlato.margen_pct;
-    const objetivoFinal = field === 'margen_objetivo' ? localUpdates.margen_objetivo : newPlato.margen_objetivo;
-    if (objetivoFinal > 0 && margenFinal >= objetivoFinal) {
-      await supabase
-        .from('alertas')
-        .update({ estado: 'resuelta' })
-        .eq('plato_id', id)
-        .eq('estado', 'pendiente');
-    }
 
     setEditandoPrecioVenta(false);
     setEditandoMargenObj(false);

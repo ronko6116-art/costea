@@ -1,5 +1,5 @@
 // src/Dashboard.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../supabaseClient';
 import { useNavigate } from 'react-router-dom';
@@ -24,7 +24,6 @@ export default function Dashboard() {
   const [restaurantes, setRestaurantes] = useState([]);
   const [restauranteSeleccionado, setRestauranteSeleccionado] = useState(null);
   const [platos, setPlatos] = useState([]);
-  const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarSelector, setMostrarSelector] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
@@ -59,41 +58,28 @@ export default function Dashboard() {
     fetchRestaurantes();
   }, []);
 
-  // Cargar platos y alertas al cambiar de restaurante
+  // Cargar platos al cambiar de restaurante
   useEffect(() => {
     if (!restauranteSeleccionado) return;
 
-    const fetchPlatosYAlertas = async () => {
+    const fetchPlatos = async () => {
       setLoading(true);
-      const { data: platosData, error: platosError } = await supabase
+      const { data, error } = await supabase
         .from('vista_coste_platos')
         .select('*')
         .eq('restaurante_id', restauranteSeleccionado.id)
         .order('plato_nombre');
 
-      if (platosError) {
-        console.error(platosError);
+      if (error) {
+        console.error(error);
       } else {
-        setPlatos(platosData);
-      }
-
-      const { data: alertasData, error: alertasError } = await supabase
-        .from('alertas')
-        .select('*')
-        .eq('restaurante_id', restauranteSeleccionado.id)
-        .eq('estado', 'pendiente')
-        .order('created_at', { ascending: false });
-
-      if (alertasError) {
-        console.error(alertasError);
-      } else {
-        setAlertas(alertasData);
+        setPlatos(data);
       }
 
       setLoading(false);
     };
 
-    fetchPlatosYAlertas();
+    fetchPlatos();
   }, [restauranteSeleccionado]);
 
   // Persist restaurant selection across navigations
@@ -102,6 +88,12 @@ export default function Dashboard() {
       localStorage.setItem('restauranteId', restauranteSeleccionado.id);
     }
   }, [restauranteSeleccionado]);
+
+  // Alertas de margen computadas localmente desde los platos
+  const alertasMargen = useMemo(() =>
+    platos.filter(p => p.margen_objetivo > 0 && p.margen_pct < p.margen_objetivo),
+    [platos]
+  );
 
   const handleLogout = async () => {
     await signOut();
@@ -264,8 +256,8 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Resumen de alertas (destacado) */}
-        {alertas.length > 0 && (
+        {/* Alertas de margen computadas desde los platos */}
+        {alertasMargen.length > 0 && (
           <div className="mb-6 rounded-xl bg-linear-to-r from-red-50 to-red-100 border border-red-200 p-4 shadow-sm">
             <div className="flex items-start gap-3">
               <div className="shrink-0 mt-0.5">
@@ -273,25 +265,18 @@ export default function Dashboard() {
               </div>
               <div className="flex-1">
                 <p className="font-bold text-red-800 text-sm">
-                  {alertas.length} alerta{alertas.length > 1 ? 's' : ''} pendiente{alertas.length > 1 ? 's' : ''}
+                  {alertasMargen.length} alerta{alertasMargen.length > 1 ? 's' : ''} de margen
                 </p>
                 <ul className="mt-1 text-sm text-red-700 space-y-1">
-                  {alertas.slice(0, 2).map((a) => {
-                    const plato = platos.find(p => p.plato_id === a.plato_id);
-                    return (
-                      <li key={a.id} className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
-                        <span>
-                          {plato ? plato.plato_nombre : 'Plato desconocido'}
-                          {a.tipo === 'erosion_margen' && ' → margen bajo'}
-                          {a.tipo === 'proveedor_subida_sostenida' && ' → proveedor subió'}
-                        </span>
-                      </li>
-                    );
-                  })}
-                  {alertas.length > 2 && (
+                  {alertasMargen.slice(0, 2).map((p) => (
+                    <li key={p.plato_id} className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
+                      <span>{p.plato_nombre} → margen bajo ({p.margen_pct}%)</span>
+                    </li>
+                  ))}
+                  {alertasMargen.length > 2 && (
                     <li className="text-red-600 font-medium text-xs">
-                      + {alertas.length - 2} más
+                      + {alertasMargen.length - 2} más
                     </li>
                   )}
                 </ul>
@@ -320,7 +305,7 @@ export default function Dashboard() {
                 <PlatoCard
                     key={plato.plato_id}
                     plato={plato}
-                    tieneAlerta={alertas.some(a => a.plato_id === plato.plato_id)}
+                    tieneAlerta={alertasMargen.some(a => a.plato_id === plato.plato_id)}
                     formatoMoneda={formatoMoneda}
                     onPress={() => {
                     console.log('Navegar a detalle de', plato.plato_nombre);
@@ -340,9 +325,9 @@ export default function Dashboard() {
         </button>
         <button className="flex flex-col items-center text-warm-gray relative">
           <Bell className="h-6 w-6" />
-          {alertas.length > 0 && (
+          {alertasMargen.length > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center">
-              {alertas.length}
+              {alertasMargen.length}
             </span>
           )}
           <span className="text-[10px] font-medium">Alertas</span>
