@@ -360,56 +360,10 @@ export default function PlatoDetail() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 mt-4">
-            <div>
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-4">
+            <div className="sm:col-span-1">
               <p className="text-xs text-warm-gray">Precio venta</p>
-              {editandoPrecioVenta ? (
-                <div>
-                  <div className="flex items-center gap-2 mt-1 bg-white rounded-lg p-1.5 border border-warm-gray/10 shadow-sm">
-                    <span className="text-sm text-warm-gray shrink-0">€</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={tempPrecioVenta}
-                      onChange={e => setTempPrecioVenta(e.target.value)}
-                      className="w-20 rounded-lg border border-terracotta/50 px-2 py-2 text-sm bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                      autoFocus
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') handleGuardarPlatoField('precio_venta', tempPrecioVenta);
-                        if (e.key === 'Escape') setEditandoPrecioVenta(false);
-                      }}
-                    />
-                    <button
-                      onClick={() => handleGuardarPlatoField('precio_venta', tempPrecioVenta)}
-                      className="p-2 rounded-full bg-olive text-white shrink-0"
-                    >
-                      <Check className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setEditandoPrecioVenta(false)}
-                      className="p-2 rounded-full bg-white border border-warm-gray/20 text-warm-gray shrink-0"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                  {precioMinimo > 0 && (
-                    <div className={`mt-1.5 flex items-center gap-1.5 text-xs ${
-                      parseFloat(tempPrecioVenta) < precioMinimo ? 'text-orange-600' : 'text-warm-gray'
-                    }`}>
-                      <span>Mín. sugerido {formatoMoneda.format(precioMinimo)}</span>
-                      {parseFloat(tempPrecioVenta) < precioMinimo && (
-                        <button
-                          onClick={() => setTempPrecioVenta(precioMinimo.toFixed(2))}
-                          className="font-semibold text-olive hover:underline"
-                        >
-                          Usar
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ) : (
+              {!editandoPrecioVenta ? (
                 <button
                   onClick={() => { setTempPrecioVenta(plato.precio_venta); setEditandoPrecioVenta(true); }}
                   className="font-bold text-ink text-lg group"
@@ -419,6 +373,10 @@ export default function PlatoDetail() {
                     Editar
                   </span>
                 </button>
+              ) : (
+                <p className="font-bold text-ink text-lg opacity-60">
+                  {formatoMoneda.format(plato.precio_venta)}
+                </p>
               )}
             </div>
             <div>
@@ -449,6 +407,59 @@ export default function PlatoDetail() {
               </div>
             </div>
           </div>
+
+          {editandoPrecioVenta && (
+            <div className="mt-3 pt-3 border-t border-warm-gray/10">
+              <p className="text-xs font-semibold text-warm-gray uppercase tracking-wide mb-2">
+                Editar precio de venta
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 bg-white rounded-lg p-1.5 border border-warm-gray/10 shadow-sm">
+                  <span className="text-sm text-warm-gray shrink-0">€</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={tempPrecioVenta}
+                    onChange={e => setTempPrecioVenta(e.target.value)}
+                    className="w-24 rounded-lg border border-terracotta/50 px-3 py-2 text-sm bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                    autoFocus
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleGuardarPlatoField('precio_venta', tempPrecioVenta);
+                      if (e.key === 'Escape') setEditandoPrecioVenta(false);
+                    }}
+                  />
+                  <button
+                    onClick={() => handleGuardarPlatoField('precio_venta', tempPrecioVenta)}
+                    className="p-2 rounded-full bg-olive text-white shrink-0"
+                  >
+                    <Check className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => setEditandoPrecioVenta(false)}
+                    className="p-2 rounded-full bg-white border border-warm-gray/20 text-warm-gray shrink-0"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                {precioMinimo > 0 && (
+                  <div className={`flex items-center gap-1.5 text-xs ${
+                    parseFloat(tempPrecioVenta) < precioMinimo ? 'text-orange-600' : 'text-warm-gray'
+                  }`}>
+                    <span>Mín. sugerido {formatoMoneda.format(precioMinimo)}</span>
+                    {parseFloat(tempPrecioVenta) < precioMinimo && (
+                      <button
+                        onClick={() => setTempPrecioVenta(precioMinimo.toFixed(2))}
+                        className="font-semibold text-olive hover:underline"
+                      >
+                        Usar
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {plato.margen_objetivo && (
             <div className="mt-3 pt-3 border-t border-warm-gray/10">
