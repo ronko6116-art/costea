@@ -244,7 +244,14 @@ export default function PlatoDetail() {
 
   const handleGuardarPlatoField = async (field, value) => {
     const updates = { updated_at: new Date().toISOString() };
-    if (field === 'precio_venta') updates.precio_venta = parseFloat(value) || 0;
+
+    if (field === 'precio_venta') {
+      const nuevoPrecio = parseFloat(value) || 0;
+      updates.precio_venta = nuevoPrecio;
+      updates.margen_pct = plato.coste_total > 0 && nuevoPrecio > 0
+        ? parseFloat(((nuevoPrecio - plato.coste_total) / nuevoPrecio * 100).toFixed(2))
+        : 0;
+    }
     if (field === 'margen_objetivo') updates.margen_objetivo = parseFloat(value) || 0;
 
     const { error } = await supabase
@@ -303,6 +310,9 @@ export default function PlatoDetail() {
   const margenBajo = plato.margen_pct < 50;
   const margenCritico = plato.margen_pct < 35;
   const diferenciaMargen = plato.margen_pct - (plato.margen_objetivo || 70);
+  const precioMinimo = plato.margen_objetivo > 0 && plato.margen_objetivo < 100
+    ? plato.coste_total / (1 - plato.margen_objetivo / 100)
+    : 0;
 
   return (
     <div className="min-h-screen bg-cream pb-24">
@@ -354,33 +364,50 @@ export default function PlatoDetail() {
             <div>
               <p className="text-xs text-warm-gray">Precio venta</p>
               {editandoPrecioVenta ? (
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span className="text-sm text-warm-gray">€</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={tempPrecioVenta}
-                    onChange={e => setTempPrecioVenta(e.target.value)}
-                    className="w-20 rounded-lg border border-terracotta/50 px-2 py-1.5 text-sm bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                    autoFocus
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') handleGuardarPlatoField('precio_venta', tempPrecioVenta);
-                      if (e.key === 'Escape') setEditandoPrecioVenta(false);
-                    }}
-                  />
-                  <button
-                    onClick={() => handleGuardarPlatoField('precio_venta', tempPrecioVenta)}
-                    className="p-1 rounded-full bg-olive text-white"
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setEditandoPrecioVenta(false)}
-                    className="p-1 rounded-full hover:bg-red-50 text-warm-gray hover:text-red-500"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
+                <div>
+                  <div className="flex items-center gap-2 mt-1 bg-white rounded-lg p-1.5 border border-warm-gray/10 shadow-sm">
+                    <span className="text-sm text-warm-gray shrink-0">€</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={tempPrecioVenta}
+                      onChange={e => setTempPrecioVenta(e.target.value)}
+                      className="w-20 rounded-lg border border-terracotta/50 px-2 py-2 text-sm bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                      autoFocus
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') handleGuardarPlatoField('precio_venta', tempPrecioVenta);
+                        if (e.key === 'Escape') setEditandoPrecioVenta(false);
+                      }}
+                    />
+                    <button
+                      onClick={() => handleGuardarPlatoField('precio_venta', tempPrecioVenta)}
+                      className="p-2 rounded-full bg-olive text-white shrink-0"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setEditandoPrecioVenta(false)}
+                      className="p-2 rounded-full bg-white border border-warm-gray/20 text-warm-gray shrink-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {precioMinimo > 0 && (
+                    <div className={`mt-1.5 flex items-center gap-1.5 text-xs ${
+                      parseFloat(tempPrecioVenta) < precioMinimo ? 'text-orange-600' : 'text-warm-gray'
+                    }`}>
+                      <span>Mín. sugerido {formatoMoneda.format(precioMinimo)}</span>
+                      {parseFloat(tempPrecioVenta) < precioMinimo && (
+                        <button
+                          onClick={() => setTempPrecioVenta(precioMinimo.toFixed(2))}
+                          className="font-semibold text-olive hover:underline"
+                        >
+                          Usar
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <button
@@ -428,7 +455,7 @@ export default function PlatoDetail() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-soft">Margen objetivo</span>
                 {editandoMargenObj ? (
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2 bg-white rounded-lg p-1.5 border border-warm-gray/10 shadow-sm">
                     <input
                       type="number"
                       step="0.5"
@@ -436,25 +463,25 @@ export default function PlatoDetail() {
                       max="100"
                       value={tempMargenObj}
                       onChange={e => setTempMargenObj(e.target.value)}
-                      className="w-16 rounded-lg border border-terracotta/50 px-2 py-1.5 text-sm bg-white text-right focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                      className="w-16 rounded-lg border border-terracotta/50 px-2 py-2 text-sm bg-white text-right focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
                       autoFocus
                       onKeyDown={e => {
                         if (e.key === 'Enter') handleGuardarPlatoField('margen_objetivo', tempMargenObj);
                         if (e.key === 'Escape') setEditandoMargenObj(false);
                       }}
                     />
-                    <span className="text-sm text-warm-gray">%</span>
+                    <span className="text-sm text-warm-gray shrink-0">%</span>
                     <button
                       onClick={() => handleGuardarPlatoField('margen_objetivo', tempMargenObj)}
-                      className="p-1 rounded-full bg-olive text-white"
+                      className="p-2 rounded-full bg-olive text-white shrink-0"
                     >
-                      <Check className="h-3 w-3" />
+                      <Check className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => setEditandoMargenObj(false)}
-                      className="p-1 rounded-full hover:bg-red-50 text-warm-gray hover:text-red-500"
+                      className="p-2 rounded-full bg-white border border-warm-gray/20 text-warm-gray shrink-0"
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
