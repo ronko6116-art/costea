@@ -107,18 +107,17 @@ export default function PlatoDetail() {
           setIngredientes(lineasConCoste);
         }
 
-        // Fetch suppliers and categories
+        // Fetch all suppliers and categories (global, not per restaurant)
         const { data: provData } = await supabase
           .from('proveedores')
           .select('id, nombre')
-          .eq('restaurante_id', platoData.restaurante_id);
+          .order('nombre');
         if (provData) setProveedores(provData);
 
         const { data: catData } = await supabase
           .from('ingredientes')
           .select('categoria')
           .not('categoria', 'is', null)
-          .eq('restaurante_id', platoData.restaurante_id)
           .order('categoria');
         if (catData) {
           const unicas = [...new Set(catData.map(c => c.categoria).filter(Boolean))];

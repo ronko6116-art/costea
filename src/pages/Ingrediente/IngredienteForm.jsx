@@ -30,8 +30,9 @@ export default function IngredienteForm() {
     const fetchData = async () => {
       // Obtener restaurante
       const savedId = localStorage.getItem('restauranteId');
+      let rId;
       if (savedId) {
-        setRestauranteId(savedId);
+        rId = savedId;
       } else {
         const { data: rData, error: rError } = await supabase
           .from('restaurantes')
@@ -42,15 +43,15 @@ export default function IngredienteForm() {
           setError('No se encontró restaurante');
           return;
         }
-        setRestauranteId(rData.id);
+        rId = rData.id;
       }
-      setRestauranteId(rData.id);
+      setRestauranteId(rId);
 
-      // Obtener proveedores
+      // Obtener todos los proveedores (sin filtrar por restaurante)
       const { data: pData, error: pError } = await supabase
         .from('proveedores')
         .select('id, nombre')
-        .eq('restaurante_id', rData.id);
+        .order('nombre');
       if (!pError) setProveedores(pData);
 
       // Obtener categorías existentes
