@@ -211,7 +211,7 @@ export default function RecetaManager() {
         </div>
       </header>
 
-      <main className="px-4 py-4 max-w-6xl mx-auto">
+      <main className="px-4 py-4 max-w-lg mx-auto">
         {/* Lista de ingredientes actuales */}
         <div className="bg-white rounded-xl border border-warm-gray/10 overflow-hidden shadow-sm">
           <div className="px-5 py-3 border-b border-warm-gray/10 flex justify-between items-center">

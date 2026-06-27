@@ -29,14 +29,20 @@ export default function IngredienteForm() {
   useEffect(() => {
     const fetchData = async () => {
       // Obtener restaurante
-      const { data: rData, error: rError } = await supabase
-        .from('restaurantes')
-        .select('id')
-        .limit(1)
-        .single();
-      if (rError) {
-        setError('No se encontró restaurante');
-        return;
+      const savedId = localStorage.getItem('restauranteId');
+      if (savedId) {
+        setRestauranteId(savedId);
+      } else {
+        const { data: rData, error: rError } = await supabase
+          .from('restaurantes')
+          .select('id')
+          .limit(1)
+          .single();
+        if (rError) {
+          setError('No se encontró restaurante');
+          return;
+        }
+        setRestauranteId(rData.id);
       }
       setRestauranteId(rData.id);
 

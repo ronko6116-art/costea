@@ -371,7 +371,7 @@ export default function PlatoDetail() {
         </div>
       </header>
 
-      <main className="px-4 py-4 max-w-6xl mx-auto">
+      <main className="px-4 py-4 max-w-lg mx-auto">
         {/* Resumen del plato */}
         <div className="bg-white rounded-xl border border-warm-gray/10 p-5 shadow-sm mb-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
@@ -569,7 +569,7 @@ export default function PlatoDetail() {
               {ingredientes.map((linea) => (
                 <div
                   key={linea.id}
-                  className="px-5 py-3 cursor-pointer hover:bg-cream/50 transition-colors"
+                  className="px-5 py-3 cursor-pointer hover:bg-cream/50 transition-colors group"
                   onClick={() => abrirModal(linea)}
                 >
                   <div className="flex justify-between items-start">
@@ -578,7 +578,7 @@ export default function PlatoDetail() {
                         <p className="font-medium text-ink">
                           {linea.ingrediente?.nombre || 'Ingrediente desconocido'}
                         </p>
-                        <Edit3 className="h-3 w-3 text-warm-gray opacity-0 group-hover:opacity-100" />
+                        <Edit3 className="h-3 w-3 text-warm-gray opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                       <div className="flex flex-wrap gap-2 text-xs text-warm-gray mt-0.5">
                         <span>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import {
   ArrowLeft, Search, ChevronDown,
-  TrendingUp, TrendingDown, Minus, Check, X, Loader2
+  Check, X, Loader2
 } from 'lucide-react';
 
 const ORDEN_CATEGORIAS = [
@@ -125,11 +125,6 @@ export default function PreciosIngrediente() {
     return precio;
   };
 
-  const getVariacion = (ing) => {
-    if (!ing.precio_anterior || ing.precio_anterior === 0) return null;
-    return ((ing.precio_actual - ing.precio_anterior) / ing.precio_anterior) * 100;
-  };
-
   const ingredienteCount = useMemo(
     () => Object.values(agrupados).reduce((sum, arr) => sum + arr.length, 0),
     [agrupados]
@@ -205,7 +200,6 @@ export default function PreciosIngrediente() {
                       {items.map(ing => {
                         const editando = preciosEditando[ing.id] !== undefined;
                         const valorEditando = preciosEditando[ing.id];
-                        const variacion = getVariacion(ing);
                         const guardando = saving === ing.id;
 
                         return (
@@ -288,18 +282,6 @@ export default function PreciosIngrediente() {
                               </div>
                             </div>
 
-                            {variacion !== null && !editando && (
-                              <div className={`flex items-center gap-1 mt-1 text-xs font-semibold ${
-                                variacion > 5 ? 'text-red-600' :
-                                variacion < -5 ? 'text-olive-dark' :
-                                'text-warm-gray'
-                              }`}>
-                                {variacion > 5 ? <TrendingUp className="h-3 w-3" /> :
-                                 variacion < -5 ? <TrendingDown className="h-3 w-3" /> :
-                                 <Minus className="h-3 w-3" />}
-                                {variacion > 0 ? '+' : ''}{variacion.toFixed(1)}%
-                              </div>
-                            )}
                           </div>
                         );
                       })}
@@ -312,7 +294,7 @@ export default function PreciosIngrediente() {
         )}
 
         {editados.size > 0 && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-warm-gray/20 p-4">
+          <div className="fixed bottom-20 left-0 right-0 bg-white border-t border-warm-gray/20 p-4 z-30">
             <div className="max-w-lg mx-auto flex items-center justify-between">
               <span className="text-sm text-ink-soft">
                 {editados.size} ingrediente{editados.size > 1 ? 's' : ''} actualizado{editados.size > 1 ? 's' : ''}

@@ -499,6 +499,13 @@ body {
   animation: fade-in 0.15s ease-out;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-up,
+  .animate-fade-in {
+    animation: none;
+  }
+}
+
 /* Mejoras para móvil */
 @layer utilities {
   .safe-bottom {

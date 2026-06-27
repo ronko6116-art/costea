@@ -21,9 +21,13 @@ export default function PlatoForm() {
   });
   const [restauranteId, setRestauranteId] = useState(null);
 
-  // Obtener el restaurante del usuario (si tiene varios, seleccionar el primero)
   useEffect(() => {
     const fetchRestaurante = async () => {
+      const savedId = localStorage.getItem('restauranteId');
+      if (savedId) {
+        setRestauranteId(savedId);
+        return;
+      }
       const { data, error } = await supabase
         .from('restaurantes')
         .select('id')
@@ -108,7 +112,7 @@ export default function PlatoForm() {
           .insert([dataToSave]);
       }
       if (result.error) throw result.error;
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -126,7 +130,7 @@ export default function PlatoForm() {
     if (error) {
       setError(error.message);
     } else {
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     }
     setSaving(false);
   };
