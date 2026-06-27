@@ -10,9 +10,6 @@ import {
   TrendingUp, 
   Euro,
   ChevronDown,
-  Home,
-  Bell,
-  Store,
   PlusCircle
 } from 'lucide-react';
 import PlatoCard from '../../contexts/PlatoCard';
@@ -157,7 +154,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-cream pb-20">
+    <div className="min-h-screen bg-cream">
       {/* Header con navegación */}
       <header className="sticky top-0 z-40 w-full border-b border-warm-gray/20 bg-cream/95 backdrop-blur-sm">
         <div className="flex items-center justify-between px-4 h-16">
@@ -317,39 +314,7 @@ export default function Dashboard() {
         )}
       </main>
 
-      {/* Bottom navigation (mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-warm-gray/20 px-4 py-2 flex justify-around items-center">
-        <button onClick={() => navigate('/dashboard')} className="flex flex-col items-center text-terracotta">
-          <Home className="h-6 w-6" />
-          <span className="text-[10px] font-medium">Inicio</span>
-        </button>
-        <button
-          onClick={() => document.getElementById('seccion-alertas')?.scrollIntoView({ behavior: 'smooth' })}
-          className="flex flex-col items-center text-warm-gray relative"
-        >
-          <Bell className="h-6 w-6" />
-          {alertasMargen.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center">
-              {alertasMargen.length}
-            </span>
-          )}
-          <span className="text-[10px] font-medium">Alertas</span>
-        </button>
-        <button
-          onClick={() => navigate('/proveedores')}
-          className="flex flex-col items-center text-warm-gray"
-        >
-          <Store className="h-6 w-6" />
-          <span className="text-[10px] font-medium">Proveedores</span>
-        </button>
-        <button
-          onClick={() => navigate('/ingredientes/nuevo')}
-          className="flex flex-col items-center text-warm-gray"
-        >
-          <PlusCircle className="h-6 w-6" />
-          <span className="text-[10px] font-medium">Ingrediente</span>
-        </button>
-      </nav>
+
     </div>
   );
 }

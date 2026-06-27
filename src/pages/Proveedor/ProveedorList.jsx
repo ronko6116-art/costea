@@ -73,7 +73,7 @@ export default function ProveedorList() {
       <header className="sticky top-0 z-40 w-full border-b border-warm-gray/20 bg-cream/95 backdrop-blur-sm">
         <div className="flex items-center justify-between px-4 h-16">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/dashboard', { replace: true })}
             className="p-2 -ml-2 rounded-full hover:bg-olive/10 text-ink transition-colors"
             aria-label="Volver"
           >

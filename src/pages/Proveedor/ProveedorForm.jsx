@@ -96,7 +96,7 @@ export default function ProveedorForm() {
           .insert([dataToSave]);
       }
       if (result.error) throw result.error;
-      navigate('/proveedores');
+      navigate('/proveedores', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -115,7 +115,7 @@ export default function ProveedorForm() {
       setError(error.message);
       setSaving(false);
     } else {
-      navigate('/proveedores');
+      navigate('/proveedores', { replace: true });
     }
   };
 

@@ -194,7 +194,7 @@ export default function RecetaManager() {
   }
 
   return (
-    <div className="min-h-screen bg-cream pb-24">
+    <div className="min-h-screen bg-cream">
       <header className="sticky top-0 z-40 w-full border-b border-warm-gray/20 bg-cream/95 backdrop-blur-sm">
         <div className="flex items-center justify-between px-4 h-16">
           <button

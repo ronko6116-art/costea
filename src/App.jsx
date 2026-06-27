@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard/Dashboard';
 import ChangePassword from './pages/Auth/ChangePassword';
 import AuthCallback from './pages/Auth/AuthCallback';
 import ProtectedRoute from './contexts/ProtectedRoute';
+import AppLayout from './contexts/AppLayout';
 import PlatoDetail from './pages/Plato/PlatoDetail';
 import PlatoForm from './pages/Plato/PlatoForm';
 import IngredienteList from './pages/Ingrediente/IngredienteList';
@@ -35,7 +36,7 @@ function AppRoutes() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <AppLayout><Dashboard /></AppLayout>
           </ProtectedRoute>
         }
       />
@@ -44,23 +45,23 @@ function AppRoutes() {
         path="/plato/:id"
         element={
             <ProtectedRoute>
-            <PlatoDetail />
+            <AppLayout><PlatoDetail /></AppLayout>
             </ProtectedRoute>
         }
       />
-    <Route path="/platos/nuevo" element={<ProtectedRoute><PlatoForm /></ProtectedRoute>} />
-    <Route path="/platos/editar/:id" element={<ProtectedRoute><PlatoForm /></ProtectedRoute>} />
-    <Route path="/ingredientes" element={<ProtectedRoute><IngredienteList /></ProtectedRoute>} />
-    <Route path="/ingredientes/nuevo" element={<ProtectedRoute><IngredienteForm /></ProtectedRoute>} />
-    <Route path="/ingredientes/editar/:id" element={<ProtectedRoute><IngredienteForm /></ProtectedRoute>} />
-    <Route path="/plato/:id/receta" element={<ProtectedRoute><RecetaManager /></ProtectedRoute>} />
-    <Route path="/precios" element={<ProtectedRoute><PreciosIngrediente /></ProtectedRoute>} />
-    <Route path="/proveedores" element={<ProtectedRoute><ProveedorList /></ProtectedRoute>} />
-    <Route path="/proveedores/nuevo" element={<ProtectedRoute><ProveedorForm /></ProtectedRoute>} />
-    <Route path="/proveedores/editar/:id" element={<ProtectedRoute><ProveedorForm /></ProtectedRoute>} />
-    <Route path="/facturas" element={<ProtectedRoute><FacturaList /></ProtectedRoute>} />
-    <Route path="/facturas/nueva" element={<ProtectedRoute><FacturaUpload /></ProtectedRoute>} />
-    <Route path="/facturas/:id/revision" element={<ProtectedRoute><FacturaRevision /></ProtectedRoute>} />
+    <Route path="/platos/nuevo" element={<ProtectedRoute><AppLayout><PlatoForm /></AppLayout></ProtectedRoute>} />
+    <Route path="/platos/editar/:id" element={<ProtectedRoute><AppLayout><PlatoForm /></AppLayout></ProtectedRoute>} />
+    <Route path="/ingredientes" element={<ProtectedRoute><AppLayout><IngredienteList /></AppLayout></ProtectedRoute>} />
+    <Route path="/ingredientes/nuevo" element={<ProtectedRoute><AppLayout><IngredienteForm /></AppLayout></ProtectedRoute>} />
+    <Route path="/ingredientes/editar/:id" element={<ProtectedRoute><AppLayout><IngredienteForm /></AppLayout></ProtectedRoute>} />
+    <Route path="/plato/:id/receta" element={<ProtectedRoute><AppLayout><RecetaManager /></AppLayout></ProtectedRoute>} />
+    <Route path="/precios" element={<ProtectedRoute><AppLayout><PreciosIngrediente /></AppLayout></ProtectedRoute>} />
+    <Route path="/proveedores" element={<ProtectedRoute><AppLayout><ProveedorList /></AppLayout></ProtectedRoute>} />
+    <Route path="/proveedores/nuevo" element={<ProtectedRoute><AppLayout><ProveedorForm /></AppLayout></ProtectedRoute>} />
+    <Route path="/proveedores/editar/:id" element={<ProtectedRoute><AppLayout><ProveedorForm /></AppLayout></ProtectedRoute>} />
+    <Route path="/facturas" element={<ProtectedRoute><AppLayout><FacturaList /></AppLayout></ProtectedRoute>} />
+    <Route path="/facturas/nueva" element={<ProtectedRoute><AppLayout><FacturaUpload /></AppLayout></ProtectedRoute>} />
+    <Route path="/facturas/:id/revision" element={<ProtectedRoute><AppLayout><FacturaRevision /></AppLayout></ProtectedRoute>} />
     </Routes>
   );
 }

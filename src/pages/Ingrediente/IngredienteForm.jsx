@@ -136,7 +136,7 @@ export default function IngredienteForm() {
           .insert([dataToSave]);
       }
       if (result.error) throw result.error;
-      navigate('/ingredientes');
+      navigate('/ingredientes', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -154,7 +154,7 @@ export default function IngredienteForm() {
     if (error) {
       setError(error.message);
     } else {
-      navigate('/ingredientes');
+      navigate('/ingredientes', { replace: true });
     }
     setSaving(false);
   };
