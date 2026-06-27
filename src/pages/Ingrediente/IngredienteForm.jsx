@@ -18,11 +18,13 @@ export default function IngredienteForm() {
     precio_actual: '',
     categoria: '',
     proveedor_habitual_id: '',
+    nuevoProveedorNombre: '',
   });
   const [proveedores, setProveedores] = useState([]);
   const [restauranteId, setRestauranteId] = useState(null);
   const [categorias, setCategorias] = useState([]);
   const [mostrarNuevaCategoria, setMostrarNuevaCategoria] = useState(false);
+  const [mostrarNuevoProveedor, setMostrarNuevoProveedor] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -73,6 +75,7 @@ export default function IngredienteForm() {
             precio_actual: iData.precio_actual || '',
             categoria: iData.categoria || '',
             proveedor_habitual_id: iData.proveedor_habitual_id || '',
+            nuevoProveedorNombre: '',
           });
         }
         setLoading(false);
@@ -95,13 +98,27 @@ export default function IngredienteForm() {
     setSaving(true);
     setError(null);
 
+    let proveedorId = formData.proveedor_habitual_id;
+
+    // Si es un nuevo proveedor, crearlo primero
+    if (formData.proveedor_habitual_id === '__nuevo__' && formData.nuevoProveedorNombre?.trim()) {
+      const { data: newProv, error: provError } = await supabase
+        .from('proveedores')
+        .insert([{ restaurante_id: restauranteId, nombre: formData.nuevoProveedorNombre.trim() }])
+        .select()
+        .single();
+      if (provError) throw provError;
+      proveedorId = newProv.id;
+      setProveedores(prev => [...prev, { id: newProv.id, nombre: newProv.nombre }]);
+    }
+
     const dataToSave = {
       restaurante_id: restauranteId,
       nombre: formData.nombre,
       unidad_medida: formData.unidad_medida,
       precio_actual: parseFloat(formData.precio_actual) || 0,
       categoria: formData.categoria || null,
-      proveedor_habitual_id: formData.proveedor_habitual_id || null,
+      proveedor_habitual_id: proveedorId || null,
       updated_at: new Date().toISOString(),
     };
 
@@ -269,17 +286,45 @@ export default function IngredienteForm() {
             <label className="block text-sm font-medium text-ink mb-1">
               Proveedor habitual
             </label>
-            <select
-              name="proveedor_habitual_id"
-              value={formData.proveedor_habitual_id}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-            >
-              <option value="">Ninguno</option>
-              {proveedores.map(p => (
-                <option key={p.id} value={p.id}>{p.nombre}</option>
-              ))}
-            </select>
+            {mostrarNuevoProveedor ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={formData.nuevoProveedorNombre}
+                  onChange={e => setFormData(prev => ({ ...prev, nuevoProveedorNombre: e.target.value, proveedor_habitual_id: '__nuevo__' }))}
+                  className="flex-1 rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                  placeholder="Nombre del nuevo proveedor..."
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => { setMostrarNuevoProveedor(false); setFormData(prev => ({ ...prev, proveedor_habitual_id: '', nuevoProveedorNombre: '' })); }}
+                  className="text-sm text-warm-gray hover:text-ink px-2"
+                >
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <select
+                name="proveedor_habitual_id"
+                value={formData.proveedor_habitual_id}
+                onChange={(e) => {
+                  if (e.target.value === '__nuevo__') {
+                    setMostrarNuevoProveedor(true);
+                    setFormData(prev => ({ ...prev, proveedor_habitual_id: '__nuevo__' }));
+                  } else {
+                    setFormData(prev => ({ ...prev, proveedor_habitual_id: e.target.value }));
+                  }
+                }}
+                className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+              >
+                <option value="">Ninguno</option>
+                {proveedores.map(p => (
+                  <option key={p.id} value={p.id}>{p.nombre}</option>
+                ))}
+                <option value="__nuevo__">+ Crear nuevo...</option>
+              </select>
+            )}
           </div>
 
           <div className="flex gap-3 pt-4">

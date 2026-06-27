@@ -35,6 +35,7 @@ export default function PlatoDetail() {
   const [proveedores, setProveedores] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [mostrarNuevaCategoria, setMostrarNuevaCategoria] = useState(false);
+  const [mostrarNuevoProveedor, setMostrarNuevoProveedor] = useState(false);
   const [savingIngrediente, setSavingIngrediente] = useState(false);
   const [editFormData, setEditFormData] = useState({
     nombre: '',
@@ -42,6 +43,7 @@ export default function PlatoDetail() {
     precio_actual: '',
     categoria: '',
     proveedor_habitual_id: '',
+    nuevoProveedorNombre: '',
     cantidad: '',
     merma: '0',
   });
@@ -140,16 +142,19 @@ export default function PlatoDetail() {
       precio_actual: linea.ingrediente.precio_actual || '',
       categoria: linea.ingrediente.categoria || '',
       proveedor_habitual_id: linea.ingrediente.proveedor_habitual_id || '',
+      nuevoProveedorNombre: '',
       cantidad: linea.cantidad || '',
       merma: linea.merma_pct || '0',
     });
     setMostrarNuevaCategoria(false);
+    setMostrarNuevoProveedor(false);
     setIngredienteEditando(linea);
   };
 
   const cerrarModal = () => {
     setIngredienteEditando(null);
     setMostrarNuevaCategoria(false);
+    setMostrarNuevoProveedor(false);
   };
 
   const handleEditChange = (field, value) => {
@@ -164,6 +169,24 @@ export default function PlatoDetail() {
 
     const now = new Date().toISOString();
 
+    let proveedorId = editFormData.proveedor_habitual_id;
+
+    // Si es un nuevo proveedor, crearlo primero
+    if (editFormData.proveedor_habitual_id === '__nuevo__' && editFormData.nuevoProveedorNombre?.trim()) {
+      const { data: newProv, error: provError } = await supabase
+        .from('proveedores')
+        .insert([{ restaurante_id: plato.restaurante_id, nombre: editFormData.nuevoProveedorNombre.trim() }])
+        .select()
+        .single();
+      if (provError) {
+        alert('Error al crear proveedor: ' + provError.message);
+        setSavingIngrediente(false);
+        return;
+      }
+      proveedorId = newProv.id;
+      setProveedores(prev => [...prev, { id: newProv.id, nombre: newProv.nombre }]);
+    }
+
     const { error: ingError } = await supabase
       .from('ingredientes')
       .update({
@@ -171,7 +194,7 @@ export default function PlatoDetail() {
         unidad_medida: editFormData.unidad_medida,
         precio_actual: parseFloat(editFormData.precio_actual) || 0,
         categoria: editFormData.categoria || null,
-        proveedor_habitual_id: editFormData.proveedor_habitual_id || null,
+        proveedor_habitual_id: proveedorId || null,
         updated_at: now,
       })
       .eq('id', linea.ingrediente.id);
@@ -219,7 +242,7 @@ export default function PlatoDetail() {
             unidad_medida: editFormData.unidad_medida,
             precio_actual: precioUnitario,
             categoria: editFormData.categoria || null,
-            proveedor_habitual_id: editFormData.proveedor_habitual_id || null,
+            proveedor_habitual_id: proveedorId || null,
           },
         };
         nuevoCoste += costeLinea;
@@ -710,16 +733,44 @@ export default function PlatoDetail() {
               {/* Proveedor */}
               <div>
                 <label className="block text-sm font-medium text-ink mb-1">Proveedor</label>
-                <select
-                  value={editFormData.proveedor_habitual_id}
-                  onChange={e => handleEditChange('proveedor_habitual_id', e.target.value)}
-                  className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                >
-                  <option value="">Ninguno</option>
-                  {proveedores.map(p => (
-                    <option key={p.id} value={p.id}>{p.nombre}</option>
-                  ))}
-                </select>
+                {mostrarNuevoProveedor ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={editFormData.nuevoProveedorNombre}
+                      onChange={e => handleEditChange('nuevoProveedorNombre', e.target.value)}
+                      className="flex-1 rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                      placeholder="Nombre del nuevo proveedor..."
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setMostrarNuevoProveedor(false); setEditFormData(prev => ({ ...prev, proveedor_habitual_id: '', nuevoProveedorNombre: '' })); }}
+                      className="text-sm text-warm-gray hover:text-ink px-2"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={editFormData.proveedor_habitual_id}
+                    onChange={e => {
+                      if (e.target.value === '__nuevo__') {
+                        setMostrarNuevoProveedor(true);
+                        setEditFormData(prev => ({ ...prev, proveedor_habitual_id: '__nuevo__' }));
+                      } else {
+                        handleEditChange('proveedor_habitual_id', e.target.value);
+                      }
+                    }}
+                    className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                  >
+                    <option value="">Ninguno</option>
+                    {proveedores.map(p => (
+                      <option key={p.id} value={p.id}>{p.nombre}</option>
+                    ))}
+                    <option value="__nuevo__">+ Crear nuevo...</option>
+                  </select>
+                )}
               </div>
 
               {/* Separador */}
