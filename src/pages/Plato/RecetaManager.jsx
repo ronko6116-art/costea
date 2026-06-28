@@ -306,18 +306,27 @@ export default function RecetaManager() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ink-soft mb-1">Merma (%)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={merma}
-                  onChange={(e) => setMerma(e.target.value)}
-                  className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-cream focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none"
-                  placeholder="ej. 15"
-                />
-                <p className="text-xs text-warm-gray mt-1">Porcentaje de desperdicio (opcional).</p>
+                <label className="block text-sm font-medium text-ink-soft mb-1">Merma</label>
+                <div className="flex gap-2">
+                  {[
+                    { value: '0', label: 'Sin merma' },
+                    { value: '20', label: 'Media: Verduras/Carnes/Legumbres 20%' },
+                    { value: '40', label: 'Alta: Pescados/Mariscos 40%' },
+                  ].map((opcion) => (
+                    <button
+                      key={opcion.value}
+                      type="button"
+                      onClick={() => setMerma(opcion.value)}
+                      className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                        merma === opcion.value
+                          ? 'bg-terracotta text-white border-terracotta'
+                          : 'bg-cream text-ink-soft border-warm-gray/30 hover:border-terracotta/50'
+                      }`}
+                    >
+                      {opcion.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="flex gap-2 pt-2">
