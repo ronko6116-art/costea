@@ -12,7 +12,8 @@ import {
   X,
   Check,
   Loader2,
-  Edit3
+  Edit3,
+  Trash2
 } from 'lucide-react';
 
 export default function PlatoDetail() {
@@ -305,6 +306,19 @@ export default function PlatoDetail() {
     navigate('/dashboard');
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('¿Eliminar este plato? Esta acción no se puede deshacer.')) return;
+    const { error } = await supabase
+      .from('platos')
+      .delete()
+      .eq('id', id);
+    if (error) {
+      alert('Error al eliminar: ' + error.message);
+      return;
+    }
+    navigate('/dashboard', { replace: true });
+  };
+
   const formatoMoneda = new Intl.NumberFormat('es-ES', {
     style: 'currency',
     currency: 'EUR',
@@ -360,13 +374,22 @@ export default function PlatoDetail() {
           <span className="font-bold text-ink text-lg truncate max-w-[60%]">
             {plato.plato_nombre}
           </span>
-          <button
-            onClick={() => navigate(`/plato/${plato.plato_id}/receta`)}
-            className="bg-olive text-white rounded-full px-4 py-2 text-sm font-semibold"
-          >
-            <Plus className="h-4 w-4 inline mr-1" />
-            Receta
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleDelete}
+              className="p-2 rounded-full hover:bg-red-50 text-red-500 transition-colors"
+              aria-label="Eliminar plato"
+            >
+              <Trash2 className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => navigate(`/plato/${plato.plato_id}/receta`)}
+              className="bg-olive text-white rounded-full px-4 py-2 text-sm font-semibold"
+            >
+              <Plus className="h-4 w-4 inline mr-1" />
+              Receta
+            </button>
+          </div>
         </div>
       </header>
 

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../supabaseClient';
-import { ArrowLeft, Plus, Edit, Trash2, Search, DollarSign } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, Search, DollarSign, ChevronDown } from 'lucide-react';
 
 export default function IngredienteList() {
   const navigate = useNavigate();
@@ -12,6 +12,7 @@ export default function IngredienteList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
+  const [categoriasAbiertas, setCategoriasAbiertas] = useState({});
 
   useEffect(() => {
     const fetchIngredientes = async () => {
@@ -45,6 +46,23 @@ export default function IngredienteList() {
   const filtered = ingredientes.filter(i =>
     i.nombre.toLowerCase().includes(search.toLowerCase())
   );
+
+  const grouped = filtered.reduce((acc, ing) => {
+    const cat = ing.categoria || 'Sin categoría';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(ing);
+    return acc;
+  }, {});
+
+  const sortedCats = Object.keys(grouped).sort((a, b) => {
+    if (a === 'Sin categoría') return 1;
+    if (b === 'Sin categoría') return -1;
+    return a.localeCompare(b);
+  });
+
+  const toggleCategoria = (cat) => {
+    setCategoriasAbiertas(prev => ({ ...prev, [cat]: !prev[cat] }));
+  };
 
   const formatoMoneda = new Intl.NumberFormat('es-ES', {
     style: 'currency',
@@ -107,32 +125,52 @@ export default function IngredienteList() {
           </div>
         ) : (
           <div className="space-y-2">
-            {filtered.map((ing) => (
-              <div key={ing.id} className="bg-white rounded-xl border border-warm-gray/10 p-4 shadow-sm flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-ink">{ing.nombre}</p>
-                  <div className="flex flex-wrap gap-2 text-xs text-warm-gray">
-                    <span>{ing.unidad_medida}</span>
-                    {ing.proveedor && <span>· {ing.proveedor.nombre}</span>}
-                    {ing.categoria && <span>· {ing.categoria}</span>}
-                  </div>
-                </div>
-                <div className="flex gap-1">
+            {sortedCats.map((cat) => {
+              const abierta = categoriasAbiertas[cat] !== false;
+              return (
+                <div key={cat} className="bg-white rounded-xl border border-warm-gray/10 shadow-sm overflow-hidden">
                   <button
-                    onClick={() => navigate(`/ingredientes/editar/${ing.id}`)}
-                    className="p-2 rounded-full hover:bg-olive/10 text-ink-soft transition-colors"
+                    onClick={() => toggleCategoria(cat)}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-cream/50 transition-colors"
                   >
-                    <Edit className="h-4 w-4" />
+                    <span className="font-semibold text-ink text-sm">{cat}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-warm-gray">{grouped[cat].length}</span>
+                      <ChevronDown className={`h-4 w-4 text-warm-gray transition-transform ${abierta ? 'rotate-180' : ''}`} />
+                    </div>
                   </button>
-                  <button
-                    onClick={() => handleDelete(ing.id)}
-                    className="p-2 rounded-full hover:bg-red-50 text-red-500 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {abierta && (
+                    <div className="divide-y divide-warm-gray/5">
+                      {grouped[cat].map((ing) => (
+                        <div key={ing.id} className="px-4 py-3 flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-ink text-sm">{ing.nombre}</p>
+                            <div className="flex flex-wrap gap-2 text-xs text-warm-gray">
+                              <span>{ing.unidad_medida}</span>
+                              {ing.proveedor && <span>· {ing.proveedor.nombre}</span>}
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => navigate(`/ingredientes/editar/${ing.id}`)}
+                              className="p-2 rounded-full hover:bg-olive/10 text-ink-soft transition-colors"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(ing.id)}
+                              className="p-2 rounded-full hover:bg-red-50 text-red-500 transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>

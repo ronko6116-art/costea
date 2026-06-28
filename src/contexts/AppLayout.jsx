@@ -8,7 +8,7 @@ export default function AppLayout({ children }) {
   const navItems = [
     { label: 'Inicio', icon: Home, path: '/dashboard' },
     { label: 'Proveedores', icon: Store, path: '/proveedores' },
-    { label: 'Ingrediente', icon: PlusCircle, path: '/ingredientes/nuevo' },
+    { label: 'Ingrediente', icon: PlusCircle, path: '/ingredientes' },
   ];
 
   const isActive = (item) => {
