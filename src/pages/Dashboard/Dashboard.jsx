@@ -302,7 +302,6 @@ export default function Dashboard() {
                 <PlatoCard
                     key={plato.plato_id}
                     plato={plato}
-                    tieneAlerta={alertasMargen.some(a => a.plato_id === plato.plato_id)}
                     formatoMoneda={formatoMoneda}
                     onPress={() => {
                     console.log('Navegar a detalle de', plato.plato_nombre);

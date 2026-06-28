@@ -1,10 +1,16 @@
 // src/PlatoCard.jsx
-import { TrendingDown, TrendingUp, AlertTriangle, ChevronRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { TrendingDown, TrendingUp, ChevronRight } from 'lucide-react';
 
-export default function PlatoCard({ plato, tieneAlerta, formatoMoneda, onPress }) {
+export default function PlatoCard({ plato, formatoMoneda, onPress }) {
   const margenBajo = plato.margen_pct < 50;
   const margenCritico = plato.margen_pct < 35;
+
+  const semaforoColor =
+    plato.margen_pct > 70
+      ? 'bg-green-500'
+      : plato.margen_pct >= 35
+      ? 'bg-yellow-500'
+      : 'bg-red-500';
 
   return (
     <div
@@ -23,14 +29,9 @@ export default function PlatoCard({ plato, tieneAlerta, formatoMoneda, onPress }
               </span>
             )}
           </div>
-          {tieneAlerta && (
-            <div className="shrink-0 ml-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-700">
-                <AlertTriangle className="h-3 w-3" />
-                Alerta
-              </span>
-            </div>
-          )}
+          <div className="shrink-0 ml-2">
+            <div className={`h-3 w-3 rounded-full ${semaforoColor} shadow-sm`} />
+          </div>
         </div>
 
         <div className="flex items-center justify-between mt-3">
