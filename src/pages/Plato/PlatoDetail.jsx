@@ -785,7 +785,7 @@ export default function PlatoDetail() {
                   </label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="0.001"
                     min="0"
                     value={editFormData.cantidad}
                     onChange={e => handleEditChange('cantidad', e.target.value)}

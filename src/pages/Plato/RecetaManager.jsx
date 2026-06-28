@@ -293,14 +293,14 @@ export default function RecetaManager() {
 
               <div>
                 <label className="block text-sm font-medium text-ink-soft mb-1">Cantidad</label>
-                <input
+                  <input
                   type="number"
-                  step="0.01"
-                  min="0.01"
+                  step="0.001"
+                  min="0.001"
                   value={cantidad}
                   onChange={(e) => setCantidad(e.target.value)}
                   className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-cream focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none"
-                  placeholder="ej. 0.25"
+                  placeholder="ej. 0.125"
                   required
                 />
               </div>
