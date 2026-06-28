@@ -126,12 +126,12 @@ export default function IngredienteList() {
         ) : (
           <div className="space-y-2">
             {sortedCats.map((cat) => {
-              const abierta = categoriasAbiertas[cat] !== false;
+              const abierta = categoriasAbiertas[cat] === true;
               return (
                 <div key={cat} className="bg-white rounded-xl border border-warm-gray/10 shadow-sm overflow-hidden">
                   <button
                     onClick={() => toggleCategoria(cat)}
-                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-cream/50 transition-colors"
+                    className="w-full flex items-center justify-between px-4 py-3 bg-warm-gray/5 hover:bg-warm-gray/10 transition-colors"
                   >
                     <span className="font-semibold text-ink text-sm">{cat}</span>
                     <div className="flex items-center gap-2">
