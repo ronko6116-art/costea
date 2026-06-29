@@ -62,10 +62,16 @@ export default function RecetaManager() {
         if (recetaError) throw recetaError;
         setReceta(recetaData || []);
 
-        // Obtener todos los ingredientes del restaurante para el select
+        // Obtener todos los ingredientes del restaurante para el select (con precios por proveedor)
         const { data: ingredientesData, error: ingredientesError } = await supabase
           .from('ingredientes')
-          .select('id, nombre, unidad_medida')
+          .select(`
+            id, nombre, unidad_medida,
+            precios_proveedor(
+              precio,
+              proveedor:proveedor_id(nombre)
+            )
+          `)
           .eq('restaurante_id', platoData.restaurante_id);
         if (ingredientesError) throw ingredientesError;
 
@@ -158,6 +164,7 @@ export default function RecetaManager() {
             id: lineaEliminada.ingrediente.id,
             nombre: lineaEliminada.ingrediente.nombre,
             unidad_medida: lineaEliminada.ingrediente.unidad_medida,
+            precios_proveedor: [],
           }
         ]);
       }
@@ -187,7 +194,7 @@ export default function RecetaManager() {
       if (error) throw error;
 
       // Añadir a disponibles y seleccionarlo automáticamente
-      setIngredientesDisponibles(prev => [...prev, nuevoIng]);
+      setIngredientesDisponibles(prev => [...prev, { ...nuevoIng, precios_proveedor: [] }]);
       setSelectedIngrediente(nuevoIng.id);
       setCreandoIngrediente(false);
       setNuevoIngNombre('');
@@ -391,7 +398,10 @@ export default function RecetaManager() {
                       <option value="">Selecciona...</option>
                       {ingredientesDisponibles.map((i) => (
                         <option key={i.id} value={i.id}>
-                          {i.nombre} ({i.unidad_medida})
+                          {i.precios_proveedor?.length > 0
+                            ? `${i.nombre} (${i.unidad_medida}) — ${i.precios_proveedor[0].proveedor?.nombre}: ${formatoMoneda.format(i.precios_proveedor[0].precio)}${i.precios_proveedor.length > 1 ? ` (+${i.precios_proveedor.length - 1})` : ''}`
+                            : `${i.nombre} (${i.unidad_medida}) — sin precio`
+                          }
                         </option>
                       ))}
                       <option value="__nuevo__" className="text-terracotta font-semibold">+ Crear nuevo ingrediente...</option>
