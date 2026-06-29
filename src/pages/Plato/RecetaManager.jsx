@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../supabaseClient';
-import { ArrowLeft, Plus, Trash2, AlertTriangle, Check } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, AlertTriangle, Check, Loader2, Sparkles } from 'lucide-react';
 
 export default function RecetaManager() {
   const { id } = useParams(); // id del plato
@@ -18,6 +18,9 @@ export default function RecetaManager() {
   const [cantidad, setCantidad] = useState('');
   const [merma, setMerma] = useState('0');
   const [saving, setSaving] = useState(false);
+  const [creandoIngrediente, setCreandoIngrediente] = useState(false);
+  const [nuevoIngNombre, setNuevoIngNombre] = useState('');
+  const [nuevoIngUnidad, setNuevoIngUnidad] = useState('kg');
 
   // Cargar datos
   useEffect(() => {
@@ -155,6 +158,39 @@ export default function RecetaManager() {
     }
   };
 
+  const handleCrearIngrediente = async () => {
+    if (!nuevoIngNombre.trim()) return;
+    setSaving(true);
+    try {
+      const restauranteId = plato?.restaurante_id;
+      if (!restauranteId) throw new Error('Restaurante no identificado');
+
+      const { data: nuevoIng, error } = await supabase
+        .from('ingredientes')
+        .insert([{
+          restaurante_id: restauranteId,
+          nombre: nuevoIngNombre.trim(),
+          unidad_medida: nuevoIngUnidad,
+          precio_actual: 0,
+        }])
+        .select('id, nombre, unidad_medida')
+        .single();
+      if (error) throw error;
+
+      // Añadir a disponibles y seleccionarlo automáticamente
+      setIngredientesDisponibles(prev => [...prev, nuevoIng]);
+      setSelectedIngrediente(nuevoIng.id);
+      setCreandoIngrediente(false);
+      setNuevoIngNombre('');
+      setNuevoIngUnidad('kg');
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleBack = () => {
     navigate(`/plato/${id}`);
   };
@@ -271,23 +307,86 @@ export default function RecetaManager() {
             <form onSubmit={handleAddIngrediente} className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-ink-soft mb-1">Ingrediente</label>
-                <select
-                  value={selectedIngrediente}
-                  onChange={(e) => setSelectedIngrediente(e.target.value)}
-                  className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-cream focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none"
-                  required
-                >
-                  <option value="">Selecciona...</option>
-                  {ingredientesDisponibles.map((i) => (
-                    <option key={i.id} value={i.id}>
-                      {i.nombre} ({i.unidad_medida})
-                    </option>
-                  ))}
-                </select>
-                {ingredientesDisponibles.length === 0 && (
-                  <p className="text-xs text-warm-gray mt-1">
-                    Todos los ingredientes ya están en la receta. Crea más ingredientes si lo necesitas.
-                  </p>
+
+                {ingredientesDisponibles.length === 0 && receta.length === 0 && !creandoIngrediente ? (
+                  /* No hay ingredientes creados aún */
+                  <div className="bg-terracotta/8 rounded-lg p-3 text-center">
+                    <p className="text-sm text-ink-soft mb-3">Aún no hay ingredientes. Crea el primero:</p>
+                    <button
+                      type="button"
+                      onClick={() => setCreandoIngrediente(true)}
+                      className="inline-flex items-center gap-1.5 bg-terracotta text-white rounded-full px-4 py-2 text-sm font-semibold"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Crear ingrediente
+                    </button>
+                  </div>
+                ) : creandoIngrediente ? (
+                  /* Formulario de creación rápida (sin <form> para evitar anidamiento) */
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={nuevoIngNombre}
+                      onChange={(e) => setNuevoIngNombre(e.target.value)}
+                      placeholder="Nombre del ingrediente"
+                      className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none"
+                      autoFocus
+                      required
+                    />
+                    <select
+                      value={nuevoIngUnidad}
+                      onChange={(e) => setNuevoIngUnidad(e.target.value)}
+                      className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none"
+                    >
+                      <option value="kg">kg</option>
+                      <option value="g">g</option>
+                      <option value="l">l</option>
+                      <option value="ml">ml</option>
+                      <option value="unidad">unidad</option>
+                      <option value="docena">docena</option>
+                    </select>
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleCrearIngrediente}
+                        disabled={saving || !nuevoIngNombre.trim()}
+                        className="flex-1 bg-olive text-white rounded-full py-2 text-sm font-semibold disabled:opacity-50"
+                      >
+                        {saving ? (
+                          <><Loader2 className="h-4 w-4 animate-spin inline" /> Creando...</>
+                        ) : 'Crear y seleccionar'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCreandoIngrediente(false)}
+                        className="flex-1 border border-warm-gray/30 text-ink-soft rounded-full py-2 text-sm font-medium"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Select normal con ingredientes disponibles */
+                  <>
+                    <select
+                      value={selectedIngrediente}
+                      onChange={(e) => setSelectedIngrediente(e.target.value)}
+                      className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-cream focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none"
+                      required
+                    >
+                      <option value="">Selecciona...</option>
+                      {ingredientesDisponibles.map((i) => (
+                        <option key={i.id} value={i.id}>
+                          {i.nombre} ({i.unidad_medida})
+                        </option>
+                      ))}
+                    </select>
+                    {ingredientesDisponibles.length === 0 && (
+                      <p className="text-xs text-warm-gray mt-1">
+                        Todos los ingredientes ya están en la receta. Crea más ingredientes si lo necesitas.
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
 

@@ -359,6 +359,7 @@ export default function PlatoDetail() {
   const precioMinimo = plato.margen_objetivo > 0 && plato.margen_objetivo < 100
     ? plato.coste_total / (1 - plato.margen_objetivo / 100)
     : 0;
+  const ingredientesSinPrecio = ingredientes.filter(l => !l.precioUnitario);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -568,6 +569,30 @@ export default function PlatoDetail() {
           )}
         </div>
 
+        {/* Warning si hay ingredientes sin precio */}
+        {ingredientesSinPrecio.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-amber-800">
+                {ingredientesSinPrecio.length} ingrediente{ingredientesSinPrecio.length > 1 ? 's' : ''} sin precio
+              </p>
+              <p className="text-xs text-amber-700 mt-0.5">
+                El coste y margen mostrados no son reales.{' '}
+                Actualiza los precios desde <button onClick={() => navigate('/precios')} className="underline font-medium">Actualizar precios</button> o procesando facturas.
+              </p>
+              <ul className="mt-2 space-y-0.5">
+                {ingredientesSinPrecio.map(l => (
+                  <li key={l.id} className="text-xs text-amber-700 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                    {l.ingrediente?.nombre}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
         {/* Desglose de ingredientes */}
         <div className="bg-white rounded-xl border border-warm-gray/10 overflow-hidden shadow-sm">
           <div className="px-5 py-3 border-b border-warm-gray/10 flex justify-between items-center">
@@ -596,6 +621,9 @@ export default function PlatoDetail() {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
+                        {!linea.precioUnitario && (
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                        )}
                         <p className="font-medium text-ink">
                           {linea.ingrediente?.nombre || 'Ingrediente desconocido'}
                         </p>

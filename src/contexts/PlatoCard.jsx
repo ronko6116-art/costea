@@ -1,5 +1,5 @@
 // src/PlatoCard.jsx
-import { TrendingDown, TrendingUp, ChevronRight } from 'lucide-react';
+import { TrendingDown, TrendingUp, ChevronRight, AlertTriangle } from 'lucide-react';
 
 export default function PlatoCard({ plato, formatoMoneda, onPress }) {
   const margenBajo = plato.margen_pct < 50;
@@ -30,7 +30,11 @@ export default function PlatoCard({ plato, formatoMoneda, onPress }) {
             )}
           </div>
           <div className="shrink-0 ml-2">
-            <div className={`h-3 w-3 rounded-full ${semaforoColor} shadow-sm`} />
+            {plato.coste_total === 0 && plato.precio_venta > 0 ? (
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+            ) : (
+              <div className={`h-3 w-3 rounded-full ${semaforoColor} shadow-sm`} />
+            )}
           </div>
         </div>
 
