@@ -308,25 +308,8 @@ export default function RecetaManager() {
               <div>
                 <label className="block text-sm font-medium text-ink-soft mb-1">Ingrediente</label>
 
-                {ingredientesDisponibles.length === 0 && !creandoIngrediente ? (
-                  /* No hay ingredientes disponibles (o aún no existen) */
-                  <div className="bg-terracotta/8 rounded-lg p-3 text-center">
-                    <p className="text-sm text-ink-soft mb-3">
-                      {receta.length === 0
-                        ? 'Aún no hay ingredientes. Crea el primero:'
-                        : 'Todos los ingredientes ya están en la receta. ¿Quieres crear uno nuevo?'}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setCreandoIngrediente(true)}
-                      className="inline-flex items-center gap-1.5 bg-terracotta text-white rounded-full px-4 py-2 text-sm font-semibold"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      Crear ingrediente
-                    </button>
-                  </div>
-                ) : creandoIngrediente ? (
-                  /* Formulario de creación rápida (sin <form> para evitar anidamiento) */
+                {creandoIngrediente ? (
+                  /* Formulario de creación rápida */
                   <div className="space-y-2">
                     <input
                       type="text"
@@ -370,11 +353,18 @@ export default function RecetaManager() {
                     </div>
                   </div>
                 ) : (
-                  /* Select normal con ingredientes disponibles */
+                  /* Select con ingredientes disponibles + opción de crear nuevo */
                   <>
                     <select
                       value={selectedIngrediente}
-                      onChange={(e) => setSelectedIngrediente(e.target.value)}
+                      onChange={(e) => {
+                        if (e.target.value === '__nuevo__') {
+                          setCreandoIngrediente(true);
+                          setSelectedIngrediente('');
+                        } else {
+                          setSelectedIngrediente(e.target.value);
+                        }
+                      }}
                       className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-cream focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none"
                       required
                     >
@@ -384,7 +374,11 @@ export default function RecetaManager() {
                           {i.nombre} ({i.unidad_medida})
                         </option>
                       ))}
+                      <option value="__nuevo__" className="text-terracotta font-semibold">+ Crear nuevo ingrediente...</option>
                     </select>
+                    {ingredientesDisponibles.length === 0 && (
+                      <p className="text-xs text-warm-gray mt-1">No hay ingredientes disponibles. Crea uno nuevo desde el selector.</p>
+                    )}
                   </>
                 )}
               </div>
@@ -430,7 +424,7 @@ export default function RecetaManager() {
               <div className="flex gap-2 pt-2">
                 <button
                   type="submit"
-                  disabled={saving || ingredientesDisponibles.length === 0}
+                  disabled={saving || !selectedIngrediente}
                   className="flex-1 bg-terracotta text-white rounded-full py-2 font-semibold disabled:opacity-50"
                 >
                   {saving ? 'Guardando...' : 'Añadir'}
