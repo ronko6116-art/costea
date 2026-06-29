@@ -50,11 +50,13 @@ export default function ProveedorList() {
     setExpandido(proveedorId);
 
     if (!productos[proveedorId]) {
-      const { data } = await supabase
+      let { data } = await supabase
         .from('precios_proveedor')
         .select('precio, ingrediente:ingrediente_id(id, nombre, unidad_medida, categoria)')
-        .eq('proveedor_id', proveedorId)
-        .order('nombre', { referencedTable: 'ingrediente' });
+        .eq('proveedor_id', proveedorId);
+      if (data) {
+        data = [...data].sort((a, b) => a.ingrediente?.nombre?.localeCompare(b.ingrediente?.nombre || '') || 0);
+      }
       setProductos(prev => ({ ...prev, [proveedorId]: data || [] }));
     }
   };
