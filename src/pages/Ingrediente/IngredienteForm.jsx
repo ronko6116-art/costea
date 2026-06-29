@@ -5,6 +5,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Save, Trash2, Plus, X } from 'lucide-react';
 
+const CATEGORIAS = [
+  'Carnes', 'Pescados', 'Frutas y Verduras', 'Frutas', 'Lácteos',
+  'Despensa', 'Legumbres y cereales', 'Pastas', 'Congelados',
+  'Bebidas', 'Especias', 'Pan', 'Aceites', 'Salsas', 'Conservas',
+  'Dulces', 'Limpieza',
+];
+
 export default function IngredienteForm() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -22,8 +29,6 @@ export default function IngredienteForm() {
   });
   const [proveedores, setProveedores] = useState([]);
   const [restauranteId, setRestauranteId] = useState(null);
-  const [categorias, setCategorias] = useState([]);
-  const [mostrarNuevaCategoria, setMostrarNuevaCategoria] = useState(false);
   const [mostrarNuevoProveedor, setMostrarNuevoProveedor] = useState(false);
   const [preciosProveedor, setPreciosProveedor] = useState([]);
   const [nuevoPpProvId, setNuevoPpProvId] = useState('');
@@ -56,17 +61,6 @@ export default function IngredienteForm() {
         .select('id, nombre')
         .order('nombre');
       if (!pError) setProveedores(pData);
-
-      // Obtener categorías existentes
-      const { data: catData } = await supabase
-        .from('ingredientes')
-        .select('categoria')
-        .not('categoria', 'is', null)
-        .order('categoria');
-      if (catData) {
-        const unicas = [...new Set(catData.map(c => c.categoria).filter(Boolean))];
-        setCategorias(unicas);
-      }
 
       // Si es edición, cargar ingrediente
       if (id) {
@@ -300,47 +294,17 @@ export default function IngredienteForm() {
             <label className="block text-sm font-medium text-ink mb-1">
               Categoría
             </label>
-            {mostrarNuevaCategoria ? (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  name="categoria"
-                  value={formData.categoria}
-                  onChange={handleChange}
-                  className="flex-1 rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                  placeholder="Nueva categoría..."
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  onClick={() => { setMostrarNuevaCategoria(false); setFormData(prev => ({ ...prev, categoria: '' })); }}
-                  className="text-sm text-warm-gray hover:text-ink px-2"
-                >
-                  Cancelar
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <select
-                  name="categoria"
-                  value={formData.categoria}
-                  onChange={(e) => {
-                    if (e.target.value === '__nueva__') {
-                      setMostrarNuevaCategoria(true);
-                    } else {
-                      setFormData(prev => ({ ...prev, categoria: e.target.value }));
-                    }
-                  }}
-                  className="flex-1 rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                >
-                  <option value="">Sin categoría</option>
-                  {categorias.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                  <option value="__nueva__">+ Crear nueva...</option>
-                </select>
-              </div>
-            )}
+            <select
+              name="categoria"
+              value={formData.categoria}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+            >
+              <option value="">Sin categoría</option>
+              {CATEGORIAS.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
           </div>
 
           <div>
