@@ -30,7 +30,7 @@ export default function PlatoCard({ plato, formatoMoneda, onPress }) {
             )}
           </div>
           <div className="shrink-0 ml-2">
-            {plato.coste_total === 0 && plato.precio_venta > 0 ? (
+            {plato.tiene_sin_precio ? (
               <AlertTriangle className="h-4 w-4 text-amber-500" />
             ) : (
               <div className={`h-3 w-3 rounded-full ${semaforoColor} shadow-sm`} />

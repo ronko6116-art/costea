@@ -107,6 +107,11 @@ export default function PreciosIngrediente() {
         prev.map(i => i.id === id ? { ...i, precio_actual: nuevoPrecio } : i)
       );
       setEditados(prev => new Set(prev).add(id));
+      setPreciosEditando(prev => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
     }
     setSaving(null);
   };
@@ -268,12 +273,12 @@ export default function PreciosIngrediente() {
                                       ...prev,
                                       [ing.id]: ing.precio_actual || ''
                                     }))}
-                                    className="group text-right"
+                                    className="text-right hover:bg-warm-gray/10 rounded-lg px-2 py-1 -mr-2 transition-colors"
                                   >
                                     <span className="font-bold text-ink">
                                       {formatearPrecioUnitario(ing)}
                                     </span>
-                                    <span className="block text-[10px] text-warm-gray opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <span className="block text-[10px] text-terracotta">
                                       Editar
                                     </span>
                                   </button>

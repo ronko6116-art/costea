@@ -4,6 +4,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Plus, Trash2, AlertTriangle, Check, Loader2, Sparkles } from 'lucide-react';
 
+const CATEGORIAS = [
+  'Carnes', 'Pescados', 'Frutas y Verduras', 'Frutas', 'Lácteos',
+  'Despensa', 'Legumbres y cereales', 'Pastas', 'Congelados',
+  'Bebidas', 'Especias', 'Pan', 'Aceites', 'Salsas', 'Conservas',
+  'Dulces', 'Limpieza',
+];
+
 export default function RecetaManager() {
   const { id } = useParams(); // id del plato
   const navigate = useNavigate();
@@ -21,6 +28,7 @@ export default function RecetaManager() {
   const [creandoIngrediente, setCreandoIngrediente] = useState(false);
   const [nuevoIngNombre, setNuevoIngNombre] = useState('');
   const [nuevoIngUnidad, setNuevoIngUnidad] = useState('kg');
+  const [nuevoIngCategoria, setNuevoIngCategoria] = useState('');
 
   // Cargar datos
   useEffect(() => {
@@ -172,6 +180,7 @@ export default function RecetaManager() {
           nombre: nuevoIngNombre.trim(),
           unidad_medida: nuevoIngUnidad,
           precio_actual: 0,
+          categoria: nuevoIngCategoria || null,
         }])
         .select('id, nombre, unidad_medida')
         .single();
@@ -183,6 +192,7 @@ export default function RecetaManager() {
       setCreandoIngrediente(false);
       setNuevoIngNombre('');
       setNuevoIngUnidad('kg');
+      setNuevoIngCategoria('');
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -331,6 +341,16 @@ export default function RecetaManager() {
                       <option value="ml">ml</option>
                       <option value="unidad">unidad</option>
                       <option value="docena">docena</option>
+                    </select>
+                    <select
+                      value={nuevoIngCategoria}
+                      onChange={(e) => setNuevoIngCategoria(e.target.value)}
+                      className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none"
+                    >
+                      <option value="">Sin categoría</option>
+                      {CATEGORIAS.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
                     </select>
                     <div className="flex gap-2 pt-1">
                       <button
