@@ -62,22 +62,41 @@ export default function RecetaManager() {
         if (recetaError) throw recetaError;
         setReceta(recetaData || []);
 
-        // Obtener todos los ingredientes del restaurante para el select (con precios por proveedor)
+        // Obtener todos los ingredientes del restaurante para el select
         const { data: ingredientesData, error: ingredientesError } = await supabase
           .from('ingredientes')
-          .select(`
-            id, nombre, unidad_medida,
-            precios_proveedor(
-              precio,
-              proveedor:proveedor_id(nombre)
-            )
-          `)
+          .select('id, nombre, unidad_medida')
           .eq('restaurante_id', platoData.restaurante_id);
         if (ingredientesError) throw ingredientesError;
 
+        // Obtener precios por proveedor para mostrar info extra en el select
+        const { data: preciosData } = await supabase
+          .from('precios_proveedor')
+          .select('ingrediente_id, precio, proveedor:proveedor_id(nombre)');
+
+        // Construir un mapa: ingrediente_id -> { primer proveedor + precio, total proveedores }
+        const preciosMap = {};
+        if (preciosData) {
+          for (const pp of preciosData) {
+            if (!preciosMap[pp.ingrediente_id]) {
+              preciosMap[pp.ingrediente_id] = { proveedor: pp.proveedor, precio: pp.precio, count: 1 };
+            } else {
+              preciosMap[pp.ingrediente_id].count++;
+            }
+          }
+        }
+
+        // Combinar ingredientes con sus precios
+        const ingredientesConPrecios = (ingredientesData || []).map(i => ({
+          ...i,
+          precios_proveedor: preciosMap[i.id]
+            ? [preciosMap[i.id], ...Array(preciosMap[i.id].count - 1).fill({})]
+            : [],
+        }));
+
         // Filtrar los que ya están en la receta
         const idsEnReceta = recetaData.map(r => r.ingrediente.id);
-        const disponibles = ingredientesData.filter(i => !idsEnReceta.includes(i.id));
+        const disponibles = ingredientesConPrecios.filter(i => !idsEnReceta.includes(i.id));
         setIngredientesDisponibles(disponibles);
 
         setLoading(false);
