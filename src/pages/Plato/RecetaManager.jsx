@@ -69,34 +69,50 @@ export default function RecetaManager() {
           .eq('restaurante_id', platoData.restaurante_id);
         if (ingredientesError) throw ingredientesError;
 
-        // Obtener precios por proveedor para mostrar info extra en el select
+        // Obtener precios por proveedor (el más reciente por ingrediente)
         const { data: preciosData } = await supabase
           .from('precios_proveedor')
-          .select('ingrediente_id, precio, proveedor:proveedor_id(nombre)');
+          .select('ingrediente_id, precio, updated_at, proveedor:proveedor_id(nombre)')
+          .order('updated_at', { ascending: false });
 
-        // Construir un mapa: ingrediente_id -> { primer proveedor + precio, total proveedores }
-        const preciosMap = {};
+        // Mapa: por cada ingrediente, el precio más reciente (sin importar proveedor)
+        const precioRecienteMap = {};
         if (preciosData) {
           for (const pp of preciosData) {
-            if (!preciosMap[pp.ingrediente_id]) {
-              preciosMap[pp.ingrediente_id] = { proveedor: pp.proveedor, precio: pp.precio, count: 1 };
-            } else {
-              preciosMap[pp.ingrediente_id].count++;
+            if (!precioRecienteMap[pp.ingrediente_id]) {
+              precioRecienteMap[pp.ingrediente_id] = pp;
             }
           }
         }
 
-        // Combinar ingredientes con sus precios
-        const ingredientesConPrecios = (ingredientesData || []).map(i => ({
-          ...i,
-          precios_proveedor: preciosMap[i.id]
-            ? [preciosMap[i.id], ...Array(preciosMap[i.id].count - 1).fill({})]
-            : [],
-        }));
+        // Mapa: por nombre normalizado, el ingrediente con datos más recientes
+        const nombreMap = {};
+        for (const ing of ingredientesData || []) {
+          const key = ing.nombre.toLowerCase().trim();
+          const existente = nombreMap[key];
+          if (!existente) {
+            nombreMap[key] = { ...ing, precioReciente: precioRecienteMap[ing.id] || null };
+          } else {
+            // Si el nuevo tiene precio reciente y el existente no, reemplazar
+            if (precioRecienteMap[ing.id] && !existente.precioReciente) {
+              nombreMap[key] = { ...ing, precioReciente: precioRecienteMap[ing.id] };
+            }
+            // Si ambos tienen, quedarse con el de updated_at más reciente
+            if (precioRecienteMap[ing.id] && existente.precioReciente) {
+              const nuevoUpdated = precioRecienteMap[ing.id].updated_at || '';
+              const existenteUpdated = existente.precioReciente.updated_at || '';
+              if (nuevoUpdated > existenteUpdated) {
+                nombreMap[key] = { ...ing, precioReciente: precioRecienteMap[ing.id] };
+              }
+            }
+          }
+        }
+
+        const ingredientesDedup = Object.values(nombreMap);
 
         // Filtrar los que ya están en la receta
         const idsEnReceta = recetaData.map(r => r.ingrediente.id);
-        const disponibles = ingredientesConPrecios.filter(i => !idsEnReceta.includes(i.id));
+        const disponibles = ingredientesDedup.filter(i => !idsEnReceta.includes(i.id));
         setIngredientesDisponibles(disponibles);
 
         setLoading(false);
@@ -183,7 +199,7 @@ export default function RecetaManager() {
             id: lineaEliminada.ingrediente.id,
             nombre: lineaEliminada.ingrediente.nombre,
             unidad_medida: lineaEliminada.ingrediente.unidad_medida,
-            precios_proveedor: [],
+            precioReciente: null,
           }
         ]);
       }
@@ -213,7 +229,7 @@ export default function RecetaManager() {
       if (error) throw error;
 
       // Añadir a disponibles y seleccionarlo automáticamente
-      setIngredientesDisponibles(prev => [...prev, { ...nuevoIng, precios_proveedor: [] }]);
+      setIngredientesDisponibles(prev => [...prev, { ...nuevoIng, precioReciente: null }]);
       setSelectedIngrediente(nuevoIng.id);
       setCreandoIngrediente(false);
       setNuevoIngNombre('');
@@ -417,9 +433,9 @@ export default function RecetaManager() {
                       <option value="">Selecciona...</option>
                       {ingredientesDisponibles.map((i) => (
                         <option key={i.id} value={i.id}>
-                          {i.precios_proveedor?.length > 0
-                            ? `${i.nombre} (${i.unidad_medida}) — ${i.precios_proveedor[0].proveedor?.nombre}: ${formatoMoneda.format(i.precios_proveedor[0].precio)}${i.precios_proveedor.length > 1 ? ` (+${i.precios_proveedor.length - 1})` : ''}`
-                            : `${i.nombre} (${i.unidad_medida}) — sin precio`
+                          {i.precioReciente
+                            ? `${i.nombre} - ${formatoMoneda.format(i.precioReciente.precio)}/${i.unidad_medida} - ${i.precioReciente.proveedor?.nombre || '?'}`
+                            : `${i.nombre} - sin precio`
                           }
                         </option>
                       ))}
