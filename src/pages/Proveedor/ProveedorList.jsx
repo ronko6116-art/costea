@@ -50,14 +50,32 @@ export default function ProveedorList() {
     setExpandido(proveedorId);
 
     if (!productos[proveedorId]) {
-      let { data } = await supabase
-        .from('precios_proveedor')
-        .select('precio, ingrediente:ingrediente_id(id, nombre, unidad_medida, categoria)')
-        .eq('proveedor_id', proveedorId);
-      if (data) {
-        data = [...data].sort((a, b) => a.ingrediente?.nombre?.localeCompare(b.ingrediente?.nombre || '') || 0);
+      const [preciosData, ingredientesData] = await Promise.all([
+        supabase
+          .from('precios_proveedor')
+          .select('precio, ingrediente:ingrediente_id(id, nombre, unidad_medida, categoria)')
+          .eq('proveedor_id', proveedorId),
+        supabase
+          .from('ingredientes')
+          .select('id, nombre, unidad_medida, categoria, precio_actual')
+          .eq('proveedor_habitual_id', proveedorId),
+      ]);
+
+      const mapa = {};
+      for (const pp of preciosData.data || []) {
+        if (pp.ingrediente) {
+          mapa[pp.ingrediente.id] = { ...pp.ingrediente, precio: pp.precio, origen: 'precio_proveedor' };
+        }
       }
-      setProductos(prev => ({ ...prev, [proveedorId]: data || [] }));
+      for (const ing of ingredientesData.data || []) {
+        if (!mapa[ing.id]) {
+          mapa[ing.id] = { id: ing.id, nombre: ing.nombre, unidad_medida: ing.unidad_medida, categoria: ing.categoria, precio: ing.precio_actual, origen: 'habitual' };
+        }
+      }
+
+      let result = Object.values(mapa);
+      result.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+      setProductos(prev => ({ ...prev, [proveedorId]: result }));
     }
   };
 
@@ -193,14 +211,14 @@ export default function ProveedorList() {
                       ) : (
                         <div className="divide-y divide-warm-gray/10">
                           {productos[p.id].map(item => (
-                            <div key={item.ingrediente.id} className="flex items-center justify-between px-5 py-3">
+                            <div key={item.id} className="flex items-center justify-between px-5 py-3">
                               <div className="flex items-center gap-2 min-w-0">
                                 <Package className="h-4 w-4 text-warm-gray shrink-0" />
-                                <span className="text-sm font-medium text-ink truncate">{item.ingrediente.nombre}</span>
+                                <span className="text-sm font-medium text-ink truncate">{item.nombre}</span>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                {item.ingrediente.categoria && (
-                                  <span className="text-[11px] text-warm-gray bg-white rounded px-1.5 py-0.5">{item.ingrediente.categoria}</span>
+                                {item.categoria && (
+                                  <span className="text-[11px] text-warm-gray bg-white rounded px-1.5 py-0.5">{item.categoria}</span>
                                 )}
                                 <span className="text-sm font-semibold text-ink">{formatoMoneda.format(item.precio)}</span>
                               </div>
