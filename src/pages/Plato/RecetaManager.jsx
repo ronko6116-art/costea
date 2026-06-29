@@ -308,10 +308,14 @@ export default function RecetaManager() {
               <div>
                 <label className="block text-sm font-medium text-ink-soft mb-1">Ingrediente</label>
 
-                {ingredientesDisponibles.length === 0 && receta.length === 0 && !creandoIngrediente ? (
-                  /* No hay ingredientes creados aún */
+                {ingredientesDisponibles.length === 0 && !creandoIngrediente ? (
+                  /* No hay ingredientes disponibles (o aún no existen) */
                   <div className="bg-terracotta/8 rounded-lg p-3 text-center">
-                    <p className="text-sm text-ink-soft mb-3">Aún no hay ingredientes. Crea el primero:</p>
+                    <p className="text-sm text-ink-soft mb-3">
+                      {receta.length === 0
+                        ? 'Aún no hay ingredientes. Crea el primero:'
+                        : 'Todos los ingredientes ya están en la receta. ¿Quieres crear uno nuevo?'}
+                    </p>
                     <button
                       type="button"
                       onClick={() => setCreandoIngrediente(true)}
@@ -381,11 +385,6 @@ export default function RecetaManager() {
                         </option>
                       ))}
                     </select>
-                    {ingredientesDisponibles.length === 0 && (
-                      <p className="text-xs text-warm-gray mt-1">
-                        Todos los ingredientes ya están en la receta. Crea más ingredientes si lo necesitas.
-                      </p>
-                    )}
                   </>
                 )}
               </div>
