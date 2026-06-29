@@ -65,7 +65,7 @@ export default function RecetaManager() {
         // Obtener todos los ingredientes del restaurante para el select
         const { data: ingredientesData, error: ingredientesError } = await supabase
           .from('ingredientes')
-          .select('id, nombre, unidad_medida')
+          .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id')
           .eq('restaurante_id', platoData.restaurante_id);
         if (ingredientesError) throw ingredientesError;
 
@@ -85,24 +85,49 @@ export default function RecetaManager() {
           }
         }
 
+        // Obtener nombres de proveedores para el fallback
+        const { data: proveedoresData } = await supabase
+          .from('proveedores')
+          .select('id, nombre');
+        const proveedoresMap = {};
+        if (proveedoresData) {
+          for (const p of proveedoresData) proveedoresMap[p.id] = p.nombre;
+        }
+
+        // Construir precioReciente por ingrediente con fallback a precio_actual
+        function getPrecioInfo(ing) {
+          const pp = precioRecienteMap[ing.id];
+          if (pp) return pp;
+          if (ing.precio_actual > 0) {
+            const nomProveedor = proveedoresMap[ing.proveedor_habitual_id] || null;
+            return {
+              precio: ing.precio_actual,
+              proveedor: nomProveedor ? { nombre: nomProveedor } : null,
+              desdeTabla: true,
+            };
+          }
+          return null;
+        }
+
         // Mapa: por nombre normalizado, el ingrediente con datos más recientes
         const nombreMap = {};
         for (const ing of ingredientesData || []) {
           const key = ing.nombre.toLowerCase().trim();
           const existente = nombreMap[key];
+          const precioInfo = getPrecioInfo(ing);
           if (!existente) {
-            nombreMap[key] = { ...ing, precioReciente: precioRecienteMap[ing.id] || null };
+            nombreMap[key] = { ...ing, precioReciente: precioInfo };
           } else {
-            // Si el nuevo tiene precio reciente y el existente no, reemplazar
-            if (precioRecienteMap[ing.id] && !existente.precioReciente) {
-              nombreMap[key] = { ...ing, precioReciente: precioRecienteMap[ing.id] };
+            // Si el nuevo tiene precio y el existente no, reemplazar
+            if (precioInfo && !existente.precioReciente) {
+              nombreMap[key] = { ...ing, precioReciente: precioInfo };
             }
             // Si ambos tienen, quedarse con el de updated_at más reciente
-            if (precioRecienteMap[ing.id] && existente.precioReciente) {
-              const nuevoUpdated = precioRecienteMap[ing.id].updated_at || '';
+            if (precioInfo && existente.precioReciente) {
+              const nuevoUpdated = precioInfo.updated_at || '';
               const existenteUpdated = existente.precioReciente.updated_at || '';
               if (nuevoUpdated > existenteUpdated) {
-                nombreMap[key] = { ...ing, precioReciente: precioRecienteMap[ing.id] };
+                nombreMap[key] = { ...ing, precioReciente: precioInfo };
               }
             }
           }
