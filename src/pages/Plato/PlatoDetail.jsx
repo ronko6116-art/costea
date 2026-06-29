@@ -421,12 +421,10 @@ export default function PlatoDetail() {
               {!editandoPrecioVenta ? (
                 <button
                   onClick={() => { setTempPrecioVenta(plato.precio_venta); setEditandoPrecioVenta(true); }}
-                  className="font-bold text-ink text-lg group"
+                  className="font-bold text-ink text-lg inline-flex items-center gap-1.5 bg-warm-gray/5 rounded-lg px-2 py-1 active:bg-warm-gray/10 transition-colors"
                 >
                   {formatoMoneda.format(plato.precio_venta)}
-                  <span className="block text-[10px] text-warm-gray opacity-0 group-hover:opacity-100 transition-opacity text-left">
-                    Editar
-                  </span>
+                  <Edit3 className="h-3.5 w-3.5 text-warm-gray" />
                 </button>
               ) : (
                 <p className="font-bold text-ink text-lg opacity-60">
@@ -553,9 +551,10 @@ export default function PlatoDetail() {
                 ) : (
                   <button
                     onClick={() => { setTempMargenObj(plato.margen_objetivo); setEditandoMargenObj(true); }}
-                    className="font-medium text-ink group"
+                    className="font-medium text-ink inline-flex items-center gap-1 bg-warm-gray/5 rounded-lg px-2 py-1 active:bg-warm-gray/10 transition-colors"
                   >
                     {plato.margen_objetivo}%
+                    <Edit3 className="h-3 w-3 text-warm-gray" />
                   </button>
                 )}
               </div>
