@@ -51,10 +51,10 @@ export default function ProveedorList() {
 
     if (!productos[proveedorId]) {
       const { data } = await supabase
-        .from('ingredientes')
-        .select('id, nombre, unidad_medida, precio_actual, categoria')
-        .eq('proveedor_habitual_id', proveedorId)
-        .order('nombre');
+        .from('precios_proveedor')
+        .select('precio, ingrediente:ingrediente_id(id, nombre, unidad_medida, categoria)')
+        .eq('proveedor_id', proveedorId)
+        .order('nombre', { referencedTable: 'ingrediente' });
       setProductos(prev => ({ ...prev, [proveedorId]: data || [] }));
     }
   };
@@ -190,17 +190,17 @@ export default function ProveedorList() {
                         </div>
                       ) : (
                         <div className="divide-y divide-warm-gray/10">
-                          {productos[p.id].map(ing => (
-                            <div key={ing.id} className="flex items-center justify-between px-5 py-3">
+                          {productos[p.id].map(item => (
+                            <div key={item.ingrediente.id} className="flex items-center justify-between px-5 py-3">
                               <div className="flex items-center gap-2 min-w-0">
                                 <Package className="h-4 w-4 text-warm-gray shrink-0" />
-                                <span className="text-sm font-medium text-ink truncate">{ing.nombre}</span>
+                                <span className="text-sm font-medium text-ink truncate">{item.ingrediente.nombre}</span>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
-                                {ing.categoria && (
-                                  <span className="text-[11px] text-warm-gray bg-white rounded px-1.5 py-0.5">{ing.categoria}</span>
+                                {item.ingrediente.categoria && (
+                                  <span className="text-[11px] text-warm-gray bg-white rounded px-1.5 py-0.5">{item.ingrediente.categoria}</span>
                                 )}
-                                <span className="text-sm font-semibold text-ink">{formatoMoneda.format(ing.precio_actual)}</span>
+                                <span className="text-sm font-semibold text-ink">{formatoMoneda.format(item.precio)}</span>
                               </div>
                             </div>
                           ))}

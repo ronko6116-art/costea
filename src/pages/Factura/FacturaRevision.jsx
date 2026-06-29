@@ -205,7 +205,19 @@ export default function FacturaRevision() {
           if (updateError) throw updateError;
         }
 
-        // 3. Registrar en histórico de precios (siempre, sea ingrediente nuevo o existente)
+        // 3. Guardar/actualizar precio en precios_proveedor (por si el mismo ingrediente
+        //    se compra a diferentes proveedores)
+        const { error: ppError } = await supabase
+          .from('precios_proveedor')
+          .upsert({
+            ingrediente_id: ingredienteId,
+            proveedor_id: proveedorId,
+            precio: linea.precio_unitario,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'ingrediente_id, proveedor_id' });
+        if (ppError) throw ppError;
+
+        // 4. Registrar en histórico de precios (siempre, sea ingrediente nuevo o existente)
         const { data: historico, error: histError } = await supabase
           .from('precios_historicos')
           .insert([{
@@ -222,7 +234,7 @@ export default function FacturaRevision() {
         facturasConsideradas.push(factura.id);
       }
 
-      // 4. Marcar la factura como procesada
+      // 5. Marcar la factura como procesada
       const { error: facturaUpdateError } = await supabase
         .from('facturas')
         .update({

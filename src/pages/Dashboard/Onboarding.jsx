@@ -3,14 +3,8 @@ import { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { ChefHat, ArrowRight, Loader2 } from 'lucide-react';
 
-const TIPOS_COCINA = [
-  'Mediterránea', 'Española', 'Italiana', 'Asiática',
-  'Mexicana', 'Americana', 'Fast casual', 'Fusión', 'Otra',
-];
-
 export default function Onboarding({ userId, onComplete }) {
   const [nombre, setNombre] = useState('');
-  const [tipoCocina, setTipoCocina] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
@@ -26,7 +20,6 @@ export default function Onboarding({ userId, onComplete }) {
       .insert([{
         owner_id: userId,
         nombre: nombre.trim(),
-        tipo_cocina: tipoCocina || null,
         pais: 'ES',
         moneda: 'EUR',
       }])
@@ -94,31 +87,6 @@ export default function Onboarding({ userId, onComplete }) {
                 autoFocus
                 maxLength={80}
               />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="tipo"
-                className="text-sm font-medium"
-                style={{ color: 'var(--color-ink)' }}
-              >
-                Tipo de cocina
-                <span className="ml-1 font-normal" style={{ color: 'var(--color-warm-gray)' }}>
-                  (opcional)
-                </span>
-              </label>
-              <select
-                id="tipo"
-                className="input-base"
-                value={tipoCocina}
-                onChange={(e) => setTipoCocina(e.target.value)}
-                style={{ cursor: 'pointer' }}
-              >
-                <option value="">Selecciona...</option>
-                {TIPOS_COCINA.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
             </div>
 
             <button
