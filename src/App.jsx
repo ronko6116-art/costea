@@ -16,9 +16,6 @@ import RecetaManager from './pages/Plato/RecetaManager';
 import ProveedorList from './pages/Proveedor/ProveedorList';
 import ProveedorForm from './pages/Proveedor/ProveedorForm';
 import PreciosIngrediente from './pages/Precios/PreciosIngrediente';
-import FacturaList from './pages/Factura/FacturaList';
-import FacturaUpload from './pages/Factura/FacturaUpload';
-import FacturaRevision from './pages/Factura/FacturaRevision';
 
 function AppRoutes() {
   const { session, loading } = useAuth();
@@ -59,9 +56,6 @@ function AppRoutes() {
     <Route path="/proveedores" element={<ProtectedRoute><AppLayout><ProveedorList /></AppLayout></ProtectedRoute>} />
     <Route path="/proveedores/nuevo" element={<ProtectedRoute><AppLayout><ProveedorForm /></AppLayout></ProtectedRoute>} />
     <Route path="/proveedores/editar/:id" element={<ProtectedRoute><AppLayout><ProveedorForm /></AppLayout></ProtectedRoute>} />
-    <Route path="/facturas" element={<ProtectedRoute><AppLayout><FacturaList /></AppLayout></ProtectedRoute>} />
-    <Route path="/facturas/nueva" element={<ProtectedRoute><AppLayout><FacturaUpload /></AppLayout></ProtectedRoute>} />
-    <Route path="/facturas/:id/revision" element={<ProtectedRoute><AppLayout><FacturaRevision /></AppLayout></ProtectedRoute>} />
     </Routes>
   );
 }
