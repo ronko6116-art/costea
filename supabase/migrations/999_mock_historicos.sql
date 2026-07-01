@@ -1,62 +1,44 @@
 -- MOCK: Genera datos de histórico de precios para pruebas
--- Este script funciona con cualquier restaurante que tenga ingredientes
+-- Inserta datos para TODOS los ingredientes existentes
+-- NO depende de restaurante_id — funciona siempre que haya ingredientes
 
 DO $$
 DECLARE
   ing RECORD;
   r RECORD;
-  precio_base DECIMAL(10,2);
+  precio_actual DECIMAL(10,2);
   precio_anterior DECIMAL(10,2);
   precio_nuevo DECIMAL(10,2);
   dias_atras INT;
   num_cambios INT;
   j INT;
-  total_ingredientes INT := 0;
-  total_inserts INT := 0;
+  total_ing INT := 0;
+  total_ins INT := 0;
 BEGIN
-  -- Mostrar restaurantes disponibles
-  RAISE NOTICE '==========================================';
-  RAISE NOTICE 'RESTAURANTES DISPONIBLES:';
-  FOR r IN SELECT id, nombre FROM restaurantes ORDER BY nombre LOOP
-    RAISE NOTICE '  - % (%)', r.nombre, r.id;
-  END LOOP;
+  SELECT COUNT(*) INTO total_ing FROM ingredientes;
+  RAISE NOTICE 'Ingredientes encontrados: %', total_ing;
 
-  -- Generar datos para cada restaurante que tenga ingredientes
-  FOR r IN SELECT id, nombre FROM restaurantes ORDER BY nombre LOOP
-    SELECT COUNT(*) INTO total_ingredientes FROM ingredientes WHERE restaurante_id = r.id;
+  FOR ing IN SELECT id, nombre, precio_actual, restaurante_id FROM ingredientes LOOP
+    precio_actual := COALESCE(ing.precio_actual, 1.0);
+    IF precio_actual <= 0 THEN precio_actual := 1.0; END IF;
 
-    IF total_ingredientes = 0 THEN
-      RAISE NOTICE 'Sin ingredientes para: % (%)', r.nombre, r.id;
-      CONTINUE;
-    END IF;
+    num_cambios := 5 + floor(random() * 6)::int;
 
-    RAISE NOTICE 'Generando datos para: % (%) - % ingredientes', r.nombre, r.id, total_ingredientes;
+    FOR j IN 1..num_cambios LOOP
+      dias_atras := 90 - ((j - 1) * 90 / num_cambios);
+      precio_anterior := precio_actual * (0.75 + random() * 0.5);
+      precio_nuevo := precio_actual * (0.75 + random() * 0.5);
 
-    FOR ing IN SELECT id, precio_actual, nombre FROM ingredientes WHERE restaurante_id = r.id LOOP
-      precio_base := COALESCE(ing.precio_actual, 1.0);
-      IF precio_base <= 0 THEN precio_base := 1.0; END IF;
-
-      num_cambios := 4 + floor(random() * 7)::int;
-
-      FOR j IN 1..num_cambios LOOP
-        dias_atras := (num_cambios - j + 1) * (90 / num_cambios);
-        precio_anterior := precio_base * (0.75 + random() * 0.5);
-        precio_nuevo := precio_base * (0.75 + random() * 0.5);
-
-        INSERT INTO precios_historicos (ingrediente_id, precio_anterior, precio_nuevo, restaurante_id, creado_en)
-        VALUES (ing.id, precio_anterior, precio_nuevo, r.id, now() - (dias_atras || ' days')::interval);
-
-        total_inserts := total_inserts + 1;
-      END LOOP;
+      INSERT INTO precios_historicos (ingrediente_id, precio_anterior, precio_nuevo, restaurante_id, creado_en)
+      VALUES (ing.id, precio_anterior, precio_nuevo, ing.restaurante_id, now() - (dias_atras || ' days')::interval);
+      total_ins := total_ins + 1;
     END LOOP;
   END LOOP;
 
-  RAISE NOTICE '==========================================';
-  RAISE NOTICE 'TOTAL INSERTS: %', total_inserts;
+  RAISE NOTICE 'INSERTS realizados: %', total_ins;
 
-  IF total_inserts = 0 THEN
-    RAISE NOTICE 'NO HAY DATOS: No se encontraron ingredientes en ningun restaurante.';
-    RAISE NOTICE 'Crea primero ingredientes desde la interfaz.';
+  IF total_ins = 0 THEN
+    RAISE NOTICE 'NO HAY DATOS: Crea al menos un ingrediente primero.';
   END IF;
 END;
 $$;

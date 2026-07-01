@@ -62,11 +62,10 @@ export default function RecetaManager() {
         if (recetaError) throw recetaError;
         setReceta(recetaData || []);
 
-        // Obtener todos los ingredientes del restaurante para el select
+        // Obtener todos los ingredientes disponibles (sin filtrar por restaurante)
         const { data: ingredientesData, error: ingredientesError } = await supabase
           .from('ingredientes')
-          .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id')
-          .eq('restaurante_id', platoData.restaurante_id);
+          .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id');
         if (ingredientesError) throw ingredientesError;
 
         // Obtener precios por proveedor (el más reciente por ingrediente)

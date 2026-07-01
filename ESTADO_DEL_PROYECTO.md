@@ -94,6 +94,8 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 | `005_rls_precios_proveedor.sql` | Activa RLS en `precios_proveedor` con políticas por restaurante |
 | `006_permisos_precios_proveedor.sql` | Desactiva RLS y da permisos totales a anon/authenticated (revierte 005) |
 | `007_precios_historicos.sql` | Crea tabla `precios_historicos` + trigger automático al actualizar `ingredientes.precio_actual` |
+| `008_fix_ingrediente_id_type.sql` | Cambia `ingrediente_id` de BIGINT a uuid + recrea trigger |
+| `009_rls_precios_historicos.sql` | Desactiva RLS y otorga permisos a anon/authenticated en `precios_historicos` |
 
 ---
 
@@ -123,6 +125,8 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 - **Precios en 3 sitios**: `ingredientes.precio_actual` + `precios_proveedor` + `precios_historicos` — posible deriva si algún code path no actualiza todos.
 - **Sin Error Boundaries**: toda la app carece de manejo de errores de React (error boundaries).
 - **Directorios vacíos**: `src/hooks/`, `src/functions/formatters/`, `src/assets/` existen pero no tienen contenido.
+- **RecetaManager no muestra ingredientes**: filtra por `restaurante_id` del plato, pero IngredienteList no filtra. Si el usuario tiene ingredientes de varios restaurantes, no aparecen en la receta.
+- **Mock de históricos no funciona**: depende de que `restaurante_id` coincida entre platos e ingredientes; si no, no inserta datos.
 
 ### Bajos
 - **Suppliers y categorías globales**: en `PlatoDetail.jsx` se fetchan todos los proveedores y categorías (no filtrados por restaurante).
