@@ -70,7 +70,7 @@ export default function RecetaManager() {
           .eq('restaurante_id', restauranteBusqueda);
         if (ingredientesError) throw ingredientesError;
 
-        // Si no hay ingredientes, probar con el restaurante activo del usuario
+        // Fallback 1: probar con el restaurante activo del usuario
         if (!ingredientesData?.length) {
           const localStorageId = localStorage.getItem('restauranteId');
           if (localStorageId && localStorageId !== restauranteBusqueda) {
@@ -82,6 +82,18 @@ export default function RecetaManager() {
             if (!fallbackError && fallbackData?.length) {
               ingredientesData = fallbackData;
             }
+          }
+        }
+
+        // Fallback 2: si sigue vacío, traer todos (como hace IngredienteList)
+        if (!ingredientesData?.length) {
+          console.warn('RecetaManager: sin ingredientes para restaurante_id=%s (plato) ni localStorage=%s, trayendo todos', restauranteBusqueda, localStorage.getItem('restauranteId'));
+          const { data: allData, error: allError } = await supabase
+            .from('ingredientes')
+            .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id')
+            .order('nombre');
+          if (!allError && allData?.length) {
+            ingredientesData = allData;
           }
         }
 
