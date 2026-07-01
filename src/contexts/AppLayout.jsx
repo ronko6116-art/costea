@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Store, PlusCircle } from 'lucide-react';
+import { Home, Store, PlusCircle, BarChart3 } from 'lucide-react';
 
 export default function AppLayout({ children }) {
   const navigate = useNavigate();
@@ -8,6 +8,7 @@ export default function AppLayout({ children }) {
   const navItems = [
     { label: 'Inicio', icon: Home, path: '/dashboard' },
     { label: 'Proveedores', icon: Store, path: '/proveedores' },
+    { label: 'Gráficos', icon: BarChart3, path: '/graficos' },
     { label: 'Ingrediente', icon: PlusCircle, path: '/ingredientes' },
   ];
 

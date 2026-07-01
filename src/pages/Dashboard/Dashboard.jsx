@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import PlatoCard from '../../contexts/PlatoCard';
 import Onboarding from './Onboarding';
-import AlertasPrecio from '../../components/AlertasPrecio';
 
 export default function Dashboard() {
   const { session, signOut } = useAuth();
@@ -280,9 +279,6 @@ export default function Dashboard() {
             </div>
           </div>
         )}
-
-        {/* Alertas de evolución de precios */}
-        <AlertasPrecio restauranteId={restauranteSeleccionado?.id} />
 
         {/* Lista de platos en formato tarjeta (mobile-first) */}
         {loading ? (
