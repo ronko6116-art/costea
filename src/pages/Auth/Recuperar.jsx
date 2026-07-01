@@ -9,7 +9,7 @@ export default function Recuperar({ onBack }) {
   const [successMsg, setSuccessMsg] = useState('');
   const [captchaToken, setCaptchaToken] = useState('');
 
-  // Comprobación instantánea usando el comportamiento de la API de Auth
+  // eslint-disable-next-line no-unused-vars
   const checkAccountExists = async (emailToCheck) => {
     try {
       console.log("1. Validando existencia del email mediante intento de autenticación...");

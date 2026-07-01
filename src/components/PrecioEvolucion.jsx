@@ -8,6 +8,18 @@ function formatoCompacto(value) {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(value);
 }
 
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white border border-warm-gray/20 rounded-lg px-3 py-2 shadow-md text-sm">
+        <p className="text-warm-gray text-xs">{label}</p>
+        <p className="font-bold text-ink">{formatoCompacto(payload[0].value)}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function PrecioEvolucion({ ingredienteId, onClose }) {
   const [datos, setDatos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,18 +57,6 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
     };
     fetch();
   }, [ingredienteId]);
-
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white border border-warm-gray/20 rounded-lg px-3 py-2 shadow-md text-sm">
-          <p className="text-warm-gray text-xs">{label}</p>
-          <p className="font-bold text-ink">{formatoCompacto(payload[0].value)}</p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div>

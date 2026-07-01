@@ -8,7 +8,7 @@ import PrecioEvolucion from '../../components/PrecioEvolucion';
 
 export default function IngredienteList() {
   const navigate = useNavigate();
-  const { session } = useAuth();
+  useAuth();
   const [ingredientes, setIngredientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

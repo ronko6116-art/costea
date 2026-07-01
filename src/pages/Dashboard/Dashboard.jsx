@@ -6,8 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { 
   LogOut, 
   AlertTriangle, 
-  TrendingDown, 
-  TrendingUp, 
   Euro,
   ChevronDown,
   PlusCircle

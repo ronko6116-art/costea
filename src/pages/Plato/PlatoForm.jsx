@@ -8,7 +8,7 @@ import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 export default function PlatoForm() {
   const { id } = useParams(); // si existe, es edición
   const navigate = useNavigate();
-  const { session } = useAuth();
+  useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);

@@ -70,6 +70,7 @@ export default function PreciosIngrediente() {
 
   useEffect(() => {
     if (categoriasOrdenadas.length > 0 && !search) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCategoriasAbiertas(prev => {
         if (Object.keys(prev).length === 0) {
           return { [categoriasOrdenadas[0]]: true };
@@ -82,6 +83,7 @@ export default function PreciosIngrediente() {
       categoriasOrdenadas.forEach(c => { todasAbiertas[c] = true; });
       setCategoriasAbiertas(todasAbiertas);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoriasOrdenadas.length, search]);
 
   const toggleCategoria = (cat) => {

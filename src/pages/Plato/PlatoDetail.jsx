@@ -92,14 +92,12 @@ export default function PlatoDetail() {
         if (!recetaData || recetaData.length === 0) {
           setIngredientes([]);
         } else {
-          let costeTotal = 0;
           const lineasConCoste = recetaData.map(linea => {
             const ingrediente = linea.ingrediente;
             if (!ingrediente) return null;
             const precioUnitario = ingrediente.precio_actual || 0;
             const cantidadConMerma = linea.cantidad * (1 + (linea.merma_pct || 0) / 100);
             const costeLinea = precioUnitario * cantidadConMerma;
-            costeTotal += costeLinea;
             return {
               ...linea,
               ingrediente,

@@ -18,6 +18,7 @@ export default function AuthCallback() {
     const type = searchParams.get('type');
 
     if (type === 'recovery') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsRecovery(true);
       setMessage('Procesando recuperación de contraseña...');
 

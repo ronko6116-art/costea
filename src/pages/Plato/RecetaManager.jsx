@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../supabaseClient';
-import { ArrowLeft, Plus, Trash2, AlertTriangle, Check, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 
 const CATEGORIAS = [
   'Carnes', 'Pescados', 'Frutas y Verduras', 'Frutas', 'Lácteos',
@@ -14,7 +14,7 @@ const CATEGORIAS = [
 export default function RecetaManager() {
   const { id } = useParams(); // id del plato
   const navigate = useNavigate();
-  const { session } = useAuth();
+  useAuth();
   const [plato, setPlato] = useState(null);
   const [receta, setReceta] = useState([]);
   const [ingredientesDisponibles, setIngredientesDisponibles] = useState([]);
@@ -215,7 +215,6 @@ export default function RecetaManager() {
       // Actualizar lista local
       setReceta([...receta, data]);
       // Quitar de disponibles
-      const ingredienteRemovido = ingredientesDisponibles.find(i => i.id === selectedIngrediente);
       setIngredientesDisponibles(ingredientesDisponibles.filter(i => i.id !== selectedIngrediente));
       // Resetear formulario
       setSelectedIngrediente('');

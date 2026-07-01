@@ -15,7 +15,7 @@ const CATEGORIAS = [
 export default function IngredienteForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { session } = useAuth();
+  useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
