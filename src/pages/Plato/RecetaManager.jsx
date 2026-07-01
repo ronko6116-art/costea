@@ -62,11 +62,28 @@ export default function RecetaManager() {
         if (recetaError) throw recetaError;
         setReceta(recetaData || []);
 
-        // Obtener todos los ingredientes disponibles (sin filtrar por restaurante)
-        const { data: ingredientesData, error: ingredientesError } = await supabase
+        // Obtener ingredientes del restaurante del plato
+        let restauranteBusqueda = platoData.restaurante_id;
+        let { data: ingredientesData, error: ingredientesError } = await supabase
           .from('ingredientes')
-          .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id');
+          .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id')
+          .eq('restaurante_id', restauranteBusqueda);
         if (ingredientesError) throw ingredientesError;
+
+        // Si no hay ingredientes, probar con el restaurante activo del usuario
+        if (!ingredientesData?.length) {
+          const localStorageId = localStorage.getItem('restauranteId');
+          if (localStorageId && localStorageId !== restauranteBusqueda) {
+            console.warn('RecetaManager: plato.restaurante_id=%s no tiene ingredientes, fallback a localStorage=%s', restauranteBusqueda, localStorageId);
+            const { data: fallbackData, error: fallbackError } = await supabase
+              .from('ingredientes')
+              .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id')
+              .eq('restaurante_id', localStorageId);
+            if (!fallbackError && fallbackData?.length) {
+              ingredientesData = fallbackData;
+            }
+          }
+        }
 
         // Obtener precios por proveedor (el más reciente por ingrediente)
         const { data: preciosData } = await supabase
