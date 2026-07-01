@@ -920,8 +920,8 @@ export default function PlatoDetail() {
               </button>
             </div>
           </div>
-          </div>
           )}
+        </div>
         </div>
       )}
     </div>
