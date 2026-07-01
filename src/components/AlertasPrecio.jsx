@@ -20,13 +20,13 @@ export default function AlertasPrecio({ restauranteId }) {
         .from('precios_historicos')
         .select(`
           ingrediente_id,
-          precio_anterior,
-          precio_nuevo,
-          creado_en,
+          precio,
+          fecha,
+          created_at,
           ingrediente:ingrediente_id (nombre, unidad_medida)
         `)
-        .gte('creado_en', hace30dias)
-        .order('creado_en', { ascending: false });
+        .gte('fecha', hace30dias)
+        .order('fecha', { ascending: false });
       if (error) console.error('AlertasPrecio: error', error);
 
       if (!data || data.length === 0) {
@@ -47,16 +47,15 @@ export default function AlertasPrecio({ restauranteId }) {
         }
         if (porIngrediente[id].cambios.length < 3) {
           porIngrediente[id].cambios.push({
-            anterior: h.precio_anterior,
-            nuevo: h.precio_nuevo,
-            fecha: h.creado_en,
+            precio: h.precio,
+            fecha: h.created_at,
           });
         }
       });
 
       const conVariacion = Object.values(porIngrediente).map((ing) => {
-        const primerPrecio = ing.cambios[ing.cambios.length - 1]?.anterior ?? ing.cambios[0]?.nuevo;
-        const ultimoPrecio = ing.cambios[0]?.nuevo ?? primerPrecio;
+        const primerPrecio = ing.cambios[ing.cambios.length - 1]?.precio ?? ing.cambios[0]?.precio;
+        const ultimoPrecio = ing.cambios[0]?.precio ?? primerPrecio;
         const variacion = ultimoPrecio - primerPrecio;
         const variacionPct = primerPrecio > 0 ? ((variacion / primerPrecio) * 100) : 0;
         return { ...ing, primerPrecio, ultimoPrecio, variacion, variacionPct };

@@ -25,21 +25,17 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
 
       const { data: hist, error: errHist } = await supabase
         .from('precios_historicos')
-        .select('precio_anterior, precio_nuevo, creado_en')
+        .select('precio, fecha, creado_en')
         .eq('ingrediente_id', ingredienteId)
-        .order('creado_en', { ascending: true });
+        .order('fecha', { ascending: true });
       if (errHist) console.error('PrecioEvolucion: error historico', errHist);
 
       if (hist && hist.length > 0) {
-        let acumulado = hist[0].precio_anterior;
-        const puntos = hist.map((h) => {
-          acumulado = h.precio_nuevo;
-          return {
-            fecha: format(parseISO(h.creado_en), 'dd MMM', { locale: es }),
-            precio: h.precio_nuevo,
-            ts: h.creado_en,
-          };
-        });
+        const puntos = hist.map((h) => ({
+          fecha: format(parseISO(h.fecha), 'dd MMM', { locale: es }),
+          precio: h.precio,
+          ts: h.creado_en,
+        }));
         setDatos(puntos);
       } else {
         setDatos([]);

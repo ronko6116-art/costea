@@ -1,13 +1,13 @@
 -- MOCK: Genera datos de histórico de precios para pruebas
 -- Inserta datos para TODOS los ingredientes existentes
--- NO depende de restaurante_id — funciona siempre que haya ingredientes
+-- Respeta la estructura real de la tabla: id uuid, precio numeric NOT NULL, fecha date NOT NULL
 
 DO $$
 DECLARE
   ing RECORD;
   precio_actual DECIMAL(10,2);
-  precio_anterior DECIMAL(10,2);
-  precio_nuevo DECIMAL(10,2);
+  precio_anterior_val DECIMAL(10,2);
+  precio_nuevo_val DECIMAL(10,2);
   dias_atras INT;
   num_cambios INT;
   j INT;
@@ -25,11 +25,21 @@ BEGIN
 
     FOR j IN 1..num_cambios LOOP
       dias_atras := 90 - ((j - 1) * 90 / num_cambios);
-      precio_anterior := precio_actual * (0.75 + random() * 0.5);
-      precio_nuevo := precio_actual * (0.75 + random() * 0.5);
+      precio_anterior_val := precio_actual * (0.75 + random() * 0.5);
+      precio_nuevo_val := precio_actual * (0.75 + random() * 0.5);
 
-      INSERT INTO precios_historicos (ingrediente_id, precio_anterior, precio_nuevo, restaurante_id, creado_en)
-      VALUES (ing.id, precio_anterior, precio_nuevo, ing.restaurante_id, now() - (dias_atras || ' days')::interval);
+      INSERT INTO precios_historicos (id, ingrediente_id, precio, fecha, created_at, precio_anterior, precio_nuevo, restaurante_id, creado_en)
+      VALUES (
+        gen_random_uuid(),
+        ing.id,
+        precio_nuevo_val,
+        (now() - (dias_atras || ' days')::interval)::date,
+        now() - (dias_atras || ' days')::interval,
+        precio_anterior_val,
+        precio_nuevo_val,
+        ing.restaurante_id,
+        now() - (dias_atras || ' days')::interval
+      );
       total_ins := total_ins + 1;
     END LOOP;
   END LOOP;
