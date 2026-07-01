@@ -16,7 +16,7 @@ export default function AlertasPrecio({ restauranteId }) {
     const fetchAlertas = async () => {
       const hace30dias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('precios_historicos')
         .select(`
           ingrediente_id,
@@ -27,6 +27,7 @@ export default function AlertasPrecio({ restauranteId }) {
         `)
         .gte('creado_en', hace30dias)
         .order('creado_en', { ascending: false });
+      if (error) console.error('AlertasPrecio: error', error);
 
       if (!data || data.length === 0) {
         setLoading(false);

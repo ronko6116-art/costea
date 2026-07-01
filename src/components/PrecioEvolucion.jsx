@@ -15,18 +15,20 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
 
   useEffect(() => {
     const fetch = async () => {
-      const { data: ing } = await supabase
+      const { data: ing, error: errIng } = await supabase
         .from('ingredientes')
         .select('nombre, precio_actual, unidad_medida')
         .eq('id', ingredienteId)
         .single();
+      if (errIng) console.error('PrecioEvolucion: error ingrediente', errIng);
       if (ing) setIngrediente(ing);
 
-      const { data: hist } = await supabase
+      const { data: hist, error: errHist } = await supabase
         .from('precios_historicos')
         .select('precio_anterior, precio_nuevo, creado_en')
         .eq('ingrediente_id', ingredienteId)
         .order('creado_en', { ascending: true });
+      if (errHist) console.error('PrecioEvolucion: error historico', errHist);
 
       if (hist && hist.length > 0) {
         let acumulado = hist[0].precio_anterior;

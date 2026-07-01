@@ -4,7 +4,7 @@
 -- Crear tabla si no existe (esquema completo)
 CREATE TABLE IF NOT EXISTS precios_historicos (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  ingrediente_id BIGINT REFERENCES ingredientes(id) ON DELETE CASCADE,
+  ingrediente_id uuid REFERENCES ingredientes(id) ON DELETE CASCADE,
   precio_anterior DECIMAL(10,2),
   precio_nuevo DECIMAL(10,2),
   restaurante_id UUID REFERENCES restaurantes(id) ON DELETE CASCADE,
