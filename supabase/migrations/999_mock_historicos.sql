@@ -17,7 +17,7 @@ BEGIN
   SELECT COUNT(*) INTO total_ing FROM ingredientes;
   RAISE NOTICE 'Ingredientes encontrados: %', total_ing;
 
-  FOR ing IN SELECT id, nombre, precio_actual, restaurante_id FROM ingredientes LOOP
+  FOR ing IN SELECT i.id, i.nombre, i.precio_actual, i.restaurante_id FROM ingredientes i LOOP
     precio_actual := COALESCE(ing.precio_actual, 1.0);
     IF precio_actual <= 0 THEN precio_actual := 1.0; END IF;
 
