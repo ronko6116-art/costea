@@ -1,25 +1,28 @@
 -- 008_fix_ingrediente_id_type.sql
 -- Corrige el tipo de ingrediente_id en precios_historicos (era BIGINT, debe ser uuid)
 
--- 1. Eliminar el trigger y la función para poder modificar la tabla
+-- 1. Eliminar políticas RLS que dependen de la columna
+DROP POLICY IF EXISTS "owner ve historico de sus ingredientes" ON precios_historicos;
+
+-- 2. Eliminar el trigger y la función para poder modificar la tabla
 DROP TRIGGER IF EXISTS trg_guardar_precios_historico ON ingredientes;
 DROP FUNCTION IF EXISTS guardar_precios_historico;
 
--- 2. Eliminar el índice que usa la columna
+-- 3. Eliminar el índice que usa la columna
 DROP INDEX IF EXISTS idx_precios_historicos_ingrediente;
 
--- 3. Vaciar datos existentes (no servirán porque el tipo era incorrecto)
+-- 4. Vaciar datos existentes (no servirán porque el tipo era incorrecto)
 DELETE FROM precios_historicos;
 
--- 4. Cambiar el tipo de la columna
+-- 5. Cambiar el tipo de la columna
 ALTER TABLE precios_historicos
   ALTER COLUMN ingrediente_id TYPE uuid USING ingrediente_id::text::uuid;
 
--- 5. Recrear el índice
+-- 6. Recrear el índice
 CREATE INDEX IF NOT EXISTS idx_precios_historicos_ingrediente
   ON precios_historicos(ingrediente_id, creado_en DESC);
 
--- 6. Recrear la función y el trigger
+-- 7. Recrear la función y el trigger
 CREATE OR REPLACE FUNCTION guardar_precios_historico()
 RETURNS TRIGGER
 LANGUAGE plpgsql
