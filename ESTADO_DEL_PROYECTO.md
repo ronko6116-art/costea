@@ -42,6 +42,11 @@
 - **Inline editing** de precio_venta y margen_objetivo en PlatoDetail
 - **Precio mínimo sugerido** al editar precio_venta (coste_total / (1 - margen_objetivo/100))
 
+### Gráficos e histórico
+- **Trigger automático**: al actualizar `precio_actual` en ingredientes, se guarda el valor anterior en `precios_historicos` vía trigger SQL
+- **Gráfica de evolución por ingrediente** (`PrecioEvolucion.jsx`): botón 📈 en `IngredienteList.jsx` y pestaña "Evolución" en el modal de `PlatoDetail.jsx` — LineChart con recharts (precio vs tiempo)
+- **Alertas de precio en Dashboard** (`AlertasPrecio.jsx`): muestra ingredientes con mayor variación de precio en los últimos 30 días, con indicador de subida/bajada/estable
+
 ### Varios
 - Persistencia de restaurante seleccionado en localStorage
 - `replace: true` en navegación post-formulario para evitar historial sucio
@@ -88,6 +93,7 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 | `004_add_tiene_sin_precio.sql` | Añade flag `tiene_sin_precio` a vista para ingredientes sin precio |
 | `005_rls_precios_proveedor.sql` | Activa RLS en `precios_proveedor` con políticas por restaurante |
 | `006_permisos_precios_proveedor.sql` | Desactiva RLS y da permisos totales a anon/authenticated (revierte 005) |
+| `007_precios_historicos.sql` | Crea tabla `precios_historicos` + trigger automático al actualizar `ingredientes.precio_actual` |
 
 ---
 
@@ -154,6 +160,8 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 | Navbar inferior en todas las páginas | El usuario siempre puede volver a Inicio en 1 tap |
 | Sin `es_volatil` en ingredientes | La pizarra de precios ya muestra todos |
 | Restaurante separado del usuario | Un usuario puede tener varios locales |
+| Histórico vía trigger SQL (no frontend) | Garantiza que ningún cambio de precio quede sin registrar |
+| recharts para gráficas | Reactivo, declarativo, sin TypeScript, componentes simples |
 
 
 ---
@@ -173,7 +181,9 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 │   ├── index.css                     # Tailwind v4 + tema personalizado + componentes
 │   ├── supabaseClient.js             # Cliente Supabase con PKCE
 │   ├── components/
-│   │   └── Navbar.jsx                # Navbar público (landing)
+│   │   ├── Navbar.jsx                # Navbar público (landing)
+│   │   ├── PrecioEvolucion.jsx       # Gráfica de evolución de precio por ingrediente (recharts)
+│   │   └── AlertasPrecio.jsx         # Widget de alertas de precio para Dashboard
 │   ├── contexts/
 │   │   ├── AuthContext.jsx           # Auth con Supabase (session, signOut)
 │   │   ├── AppLayout.jsx             # Navbar inferior + wrapper
@@ -216,7 +226,8 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 │       ├── 003_precios_proveedor.sql
 │       ├── 004_add_tiene_sin_precio.sql
 │       ├── 005_rls_precios_proveedor.sql
-│       └── 006_permisos_precios_proveedor.sql
+│       ├── 006_permisos_precios_proveedor.sql
+│       └── 007_precios_historicos.sql
 ├── .env                              # Variables públicas (Supabase, Turnstile)
 ├── .env.local                        # Desarrollo local (no versionado)
 ├── .env.production                   # Producción Vercel

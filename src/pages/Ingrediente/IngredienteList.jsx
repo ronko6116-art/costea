@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../supabaseClient';
-import { ArrowLeft, Plus, Edit, Trash2, Search, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, Search, ChevronDown, TrendingUp } from 'lucide-react';
+import PrecioEvolucion from '../../components/PrecioEvolucion';
 
 export default function IngredienteList() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export default function IngredienteList() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [categoriasAbiertas, setCategoriasAbiertas] = useState({});
+  const [ingredienteEvolucion, setIngredienteEvolucion] = useState(null);
 
   useEffect(() => {
     const fetchIngredientes = async () => {
@@ -144,6 +146,13 @@ export default function IngredienteList() {
                           </div>
                           <div className="flex gap-1">
                             <button
+                              onClick={() => setIngredienteEvolucion(ing)}
+                              className="p-2 rounded-full hover:bg-terracotta/10 text-terracotta transition-colors"
+                              title="Ver evolución de precio"
+                            >
+                              <TrendingUp className="h-4 w-4" />
+                            </button>
+                            <button
                               onClick={() => navigate(`/ingredientes/editar/${ing.id}`)}
                               className="p-2 rounded-full hover:bg-olive/10 text-ink-soft transition-colors"
                             >
@@ -166,6 +175,25 @@ export default function IngredienteList() {
           </div>
         )}
       </main>
+
+      {/* Modal evolución de precio */}
+      {ingredienteEvolucion && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          onClick={() => setIngredienteEvolucion(null)}
+        >
+          <div className="fixed inset-0 bg-black/40 transition-opacity" />
+          <div
+            className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl p-5 sm:p-6 animate-slide-up"
+            onClick={e => e.stopPropagation()}
+          >
+            <PrecioEvolucion
+              ingredienteId={ingredienteEvolucion.id}
+              onClose={() => setIngredienteEvolucion(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

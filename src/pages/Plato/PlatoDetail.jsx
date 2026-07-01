@@ -13,8 +13,10 @@ import {
   Check,
   Loader2,
   Edit3,
-  Trash2
+  Trash2,
+  BarChart3
 } from 'lucide-react';
+import PrecioEvolucion from '../../components/PrecioEvolucion';
 
 export default function PlatoDetail() {
   const { id } = useParams();
@@ -38,6 +40,7 @@ export default function PlatoDetail() {
   const [mostrarNuevaCategoria, setMostrarNuevaCategoria] = useState(false);
   const [mostrarNuevoProveedor, setMostrarNuevoProveedor] = useState(false);
   const [savingIngrediente, setSavingIngrediente] = useState(false);
+  const [vistaEvolucion, setVistaEvolucion] = useState(false);
   const [editFormData, setEditFormData] = useState({
     nombre: '',
     unidad_medida: 'kg',
@@ -148,6 +151,7 @@ export default function PlatoDetail() {
     });
     setMostrarNuevaCategoria(false);
     setMostrarNuevoProveedor(false);
+    setVistaEvolucion(false);
     setIngredienteEditando(linea);
   };
 
@@ -155,6 +159,7 @@ export default function PlatoDetail() {
     setIngredienteEditando(null);
     setMostrarNuevaCategoria(false);
     setMostrarNuevoProveedor(false);
+    setVistaEvolucion(false);
   };
 
   const handleEditChange = (field, value) => {
@@ -685,7 +690,30 @@ export default function PlatoDetail() {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
-              <h3 className="font-bold text-ink text-lg">Editar ingrediente</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setVistaEvolucion(false)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    !vistaEvolucion
+                      ? 'bg-terracotta text-white'
+                      : 'bg-warm-gray/10 text-ink-soft hover:text-ink'
+                  }`}
+                >
+                  <Edit3 className="h-4 w-4 inline mr-1" />
+                  Editar
+                </button>
+                <button
+                  onClick={() => setVistaEvolucion(true)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    vistaEvolucion
+                      ? 'bg-terracotta text-white'
+                      : 'bg-warm-gray/10 text-ink-soft hover:text-ink'
+                  }`}
+                >
+                  <BarChart3 className="h-4 w-4 inline mr-1" />
+                  Evolución
+                </button>
+              </div>
               <button
                 onClick={cerrarModal}
                 className="p-2 -mr-2 rounded-full hover:bg-warm-gray/10 transition-colors"
@@ -694,6 +722,13 @@ export default function PlatoDetail() {
               </button>
             </div>
 
+            {vistaEvolucion ? (
+              <PrecioEvolucion
+                ingredienteId={ingredienteEditando?.ingrediente?.id}
+                onClose={() => setVistaEvolucion(false)}
+              />
+            ) : (
+            <div>
             <div className="space-y-4">
               {/* Nombre */}
               <div>
@@ -885,6 +920,8 @@ export default function PlatoDetail() {
               </button>
             </div>
           </div>
+          </div>
+          )}
         </div>
       )}
     </div>
