@@ -48,24 +48,43 @@ export default function AuthCallback() {
       const maxAttempts = 25;
 
       const checkSession = async () => {
-        const { data } = await supabase.auth.getSession();
-        if (data?.session) {
-          handledRef.current = true;
-          setMessage('¡Login exitoso! Redirigiendo...');
-          setTimeout(() => navigate('/dashboard', { replace: true }), 500);
-          return true;
+        try {
+          const { data } = await supabase.auth.getSession();
+          if (data?.session) {
+            handledRef.current = true;
+            setMessage('¡Login exitoso! Redirigiendo...');
+            setTimeout(() => navigate('/dashboard', { replace: true }), 500);
+            return true;
+          }
+        } catch (err) {
+          console.error('AuthCallback: error al verificar sesión:', err);
         }
         return false;
       };
 
-      if (await checkSession()) return;
+      try {
+        if (await checkSession()) return;
+      } catch (_err) {
+        // Si el primer check falla, continuamos al polling
+      }
 
       if (code) {
         const interval = setInterval(async () => {
-          attempts++;
-          if (await checkSession() || attempts >= maxAttempts) {
-            clearInterval(interval);
-            if (!handledRef.current) {
+          try {
+            attempts++;
+            const found = await checkSession();
+            if (found || attempts >= maxAttempts) {
+              clearInterval(interval);
+              if (!handledRef.current) {
+                setMessage('Error al procesar la autenticación');
+                setTimeout(() => navigate('/login', { replace: true }), 1500);
+              }
+            }
+          } catch (err) {
+            console.error('AuthCallback: error en polling:', err);
+            attempts++;
+            if (attempts >= maxAttempts) {
+              clearInterval(interval);
               setMessage('Error al procesar la autenticación');
               setTimeout(() => navigate('/login', { replace: true }), 1500);
             }
