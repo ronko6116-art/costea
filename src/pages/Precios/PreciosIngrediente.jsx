@@ -5,26 +5,7 @@ import {
   ArrowLeft, Search, ChevronDown,
   Check, X, Loader2
 } from 'lucide-react';
-
-const ORDEN_CATEGORIAS = [
-  'Carnes',
-  'Pescados',
-  'Frutas y Verduras',
-  'Frutas',
-  'Lácteos',
-  'Despensa',
-  'Legumbres y cereales',
-  'Pastas',
-  'Congelados',
-  'Bebidas',
-  'Especias',
-  'Pan',
-  'Aceites',
-  'Salsas',
-  'Conservas',
-  'Dulces',
-  'Limpieza',
-];
+import { ORDEN_CATEGORIAS } from '../../utils/categorias';
 
 export default function PreciosIngrediente() {
   const navigate = useNavigate();

@@ -4,13 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
-
-const CATEGORIAS = [
-  'Carnes', 'Pescados', 'Frutas y Verduras', 'Frutas', 'Lácteos',
-  'Despensa', 'Legumbres y cereales', 'Pastas', 'Congelados',
-  'Bebidas', 'Especias', 'Pan', 'Aceites', 'Salsas', 'Conservas',
-  'Dulces', 'Limpieza',
-];
+import { CATEGORIAS } from '../../utils/categorias';
 
 export default function IngredienteForm() {
   const { id } = useParams();

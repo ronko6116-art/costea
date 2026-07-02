@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Plus, Edit, Trash2, Search, ChevronDown, TrendingUp } from 'lucide-react';
+import { CATEGORIAS } from '../../utils/categorias';
 import PrecioEvolucion from '../../components/PrecioEvolucion';
 
 export default function IngredienteList() {

@@ -27,18 +27,24 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
 
   useEffect(() => {
     const fetch = async () => {
+      // Try to get restaurant_id from localStorage for filtering
+      const restauranteId = localStorage.getItem('restauranteId');
+      
       const { data: ing, error: errIng } = await supabase
         .from('ingredientes')
-        .select('nombre, precio_actual, unidad_medida')
+        .select('nombre, precio_actual, unidad_medida, restaurante_id')
         .eq('id', ingredienteId)
         .single();
       if (errIng) console.error('PrecioEvolucion: error ingrediente', errIng);
-      if (ing) setIngrediente(ing);
+      if (ing) {
+        setIngrediente(ing);
+      }
 
       const { data: hist, error: errHist } = await supabase
         .from('precios_historicos')
         .select('precio, fecha, creado_en')
         .eq('ingrediente_id', ingredienteId)
+        .eq('restaurante_id', ing?.restaurante_id || restauranteId)
         .order('fecha', { ascending: true });
       if (errHist) console.error('PrecioEvolucion: error historico', errHist);
 
