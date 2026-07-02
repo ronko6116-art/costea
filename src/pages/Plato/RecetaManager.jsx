@@ -23,6 +23,7 @@ export default function RecetaManager() {
   const [nuevoIngNombre, setNuevoIngNombre] = useState('');
   const [nuevoIngUnidad, setNuevoIngUnidad] = useState('kg');
   const [nuevoIngCategoria, setNuevoIngCategoria] = useState('');
+  const [nuevoIngPrecioCompra, setNuevoIngPrecioCompra] = useState('');
 
   // Cargar datos
   useEffect(() => {
@@ -267,20 +268,21 @@ export default function RecetaManager() {
           restaurante_id: restauranteId,
           nombre: nuevoIngNombre.trim(),
           unidad_medida: nuevoIngUnidad,
-          precio_actual: 0,
+          precio_actual: parseFloat(nuevoIngPrecioCompra) || 0,
           categoria: nuevoIngCategoria || null,
         }])
-        .select('id, nombre, unidad_medida')
+        .select('id, nombre, unidad_medida, precio_actual')
         .single();
       if (error) throw error;
 
       // Añadir a disponibles y seleccionarlo automáticamente
-      setIngredientesDisponibles(prev => [...prev, { ...nuevoIng, precioReciente: null }]);
+      setIngredientesDisponibles(prev => [...prev, { ...nuevoIng, precioReciente: { precio: nuevoIng.precio_actual } }]);
       setSelectedIngrediente(nuevoIng.id);
       setCreandoIngrediente(false);
       setNuevoIngNombre('');
       setNuevoIngUnidad('kg');
       setNuevoIngCategoria('');
+      setNuevoIngPrecioCompra('');
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -440,6 +442,15 @@ export default function RecetaManager() {
                         <option key={c} value={c}>{c}</option>
                       ))}
                     </select>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={nuevoIngPrecioCompra}
+                      onChange={(e) => setNuevoIngPrecioCompra(e.target.value)}
+                      placeholder="Precio de compra (€)"
+                      className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none"
+                    />
                     <div className="flex gap-2 pt-1">
                       <button
                         type="button"
