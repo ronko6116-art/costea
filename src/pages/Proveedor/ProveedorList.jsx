@@ -11,12 +11,26 @@ export default function ProveedorList() {
   const [search, setSearch] = useState('');
   const [expandido, setExpandido] = useState(null);
   const [productos, setProductos] = useState({});
+  const [restauranteId, setRestauranteId] = useState(null);
 
   useEffect(() => {
+    const savedId = localStorage.getItem('restauranteId');
+    if (savedId) {
+      setRestauranteId(savedId);
+      return;
+    }
+    supabase.from('restaurantes').select('id').limit(1).single().then(({ data }) => {
+      if (data) setRestauranteId(data.id);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!restauranteId) return;
     const fetchProveedores = async () => {
       const { data, error } = await supabase
         .from('proveedores')
         .select('*')
+        .eq('restaurante_id', restauranteId)
         .order('nombre');
       if (error) {
         setError(error.message);
@@ -26,7 +40,7 @@ export default function ProveedorList() {
       setLoading(false);
     };
     fetchProveedores();
-  }, []);
+  }, [restauranteId]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('¿Eliminar este proveedor? Los ingredientes asociados perderán su proveedor habitual.')) return;

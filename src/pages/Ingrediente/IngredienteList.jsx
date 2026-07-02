@@ -15,12 +15,26 @@ export default function IngredienteList() {
   const [search, setSearch] = useState('');
   const [categoriasAbiertas, setCategoriasAbiertas] = useState({});
   const [ingredienteEvolucion, setIngredienteEvolucion] = useState(null);
+  const [restauranteId, setRestauranteId] = useState(null);
 
   useEffect(() => {
+    const savedId = localStorage.getItem('restauranteId');
+    if (savedId) {
+      setRestauranteId(savedId);
+      return;
+    }
+    supabase.from('restaurantes').select('id').limit(1).single().then(({ data }) => {
+      if (data) setRestauranteId(data.id);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!restauranteId) return;
     const fetchIngredientes = async () => {
       const { data, error } = await supabase
         .from('ingredientes')
         .select('*, proveedor:proveedores(nombre)')
+        .eq('restaurante_id', restauranteId)
         .order('nombre');
       if (error) {
         setError(error.message);
@@ -30,7 +44,7 @@ export default function IngredienteList() {
       setLoading(false);
     };
     fetchIngredientes();
-  }, []);
+  }, [restauranteId]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('¿Eliminar este ingrediente? Se perderán las recetas asociadas.')) return;

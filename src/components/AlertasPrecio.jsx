@@ -25,6 +25,7 @@ export default function AlertasPrecio({ restauranteId }) {
           fecha,
           ingrediente:ingrediente_id (nombre, unidad_medida)
         `)
+        .eq('restaurante_id', restauranteId)
         .gte('fecha', hace30dias)
         .order('fecha', { ascending: true });
       if (error) console.error('AlertasPrecio: error', error);

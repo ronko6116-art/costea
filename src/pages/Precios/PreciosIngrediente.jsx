@@ -35,18 +35,32 @@ export default function PreciosIngrediente() {
   const [preciosEditando, setPreciosEditando] = useState({});
   const [editados, setEditados] = useState(new Set());
   const [categoriasAbiertas, setCategoriasAbiertas] = useState({});
+  const [restauranteId, setRestauranteId] = useState(null);
 
   useEffect(() => {
+    const savedId = localStorage.getItem('restauranteId');
+    if (savedId) {
+      setRestauranteId(savedId);
+      return;
+    }
+    supabase.from('restaurantes').select('id').limit(1).single().then(({ data }) => {
+      if (data) setRestauranteId(data.id);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!restauranteId) return;
     const fetchData = async () => {
       const { data } = await supabase
         .from('ingredientes')
         .select('*, proveedor:proveedores(nombre)')
+        .eq('restaurante_id', restauranteId)
         .order('nombre');
       if (data) setIngredientes(data);
       setLoading(false);
     };
     fetchData();
-  }, []);
+  }, [restauranteId]);
 
   const agrupados = useMemo(() => {
     const mapa = {};
