@@ -95,7 +95,7 @@ export default function PlatoDetail() {
             if (!ingrediente) return null;
             const precioUnitario = ingrediente.precio_actual || 0;
             const cantidadConMerma = linea.cantidad * (1 + (linea.merma_pct || 0) / 100);
-            const costeLinea = precioUnitario * cantidadConMerma * (platoData.factor_porcion || 1);
+            const costeLinea = precioUnitario * cantidadConMerma / (platoData.porciones_base || 1) * (platoData.factor_porcion || 1);
             return {
               ...linea,
               ingrediente,

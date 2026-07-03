@@ -82,6 +82,8 @@ export default function PlatoForm() {
       return;
     }
     const factorNum = parseFloat(factor) || 1;
+    const rb = recetasBase.find(r => r.id === recetaId);
+    const porciones = rb?.porciones_base || 1;
     try {
       const { data: lineas } = await supabase
         .from('receta_lineas')
@@ -98,11 +100,11 @@ export default function PlatoForm() {
         const merma = (l.merma_pct || 0) / 100;
         return sum + precio * cant * (1 + merma);
       }, 0);
-      const costeConFactor = costeBase * factorNum;
-      setCosteReceta(costeConFactor);
+      const costeRacion = costeBase / porciones * factorNum;
+      setCosteReceta(costeRacion);
       const margenNum = parseFloat(margen);
       if (margenNum > 0 && margenNum < 100) {
-        setPrecioSugerido(costeConFactor / (1 - margenNum / 100));
+        setPrecioSugerido(costeRacion / (1 - margenNum / 100));
       } else {
         setPrecioSugerido(null);
       }
@@ -110,7 +112,7 @@ export default function PlatoForm() {
       setCosteReceta(null);
       setPrecioSugerido(null);
     }
-  }, []);
+  }, [recetasBase]);
 
   useEffect(() => {
     calcularCoste(formData.receta_id, formData.factor_porcion, formData.margen_objetivo);
