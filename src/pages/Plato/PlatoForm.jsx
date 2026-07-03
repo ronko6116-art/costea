@@ -1,4 +1,3 @@
-// src/PlatoForm.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -14,7 +13,7 @@ const FACTORES = [
 ];
 
 export default function PlatoForm() {
-  const { id } = useParams(); // si existe, es edición
+  const { id } = useParams();
   const navigate = useNavigate();
   useAuth();
   const { restauranteId } = useRestaurant();
@@ -32,7 +31,6 @@ export default function PlatoForm() {
     activo: true,
   });
 
-  // Cargar recetas base del restaurante (para selector)
   useEffect(() => {
     if (!restauranteId) return;
     const fetchRecetas = async () => {
@@ -46,7 +44,6 @@ export default function PlatoForm() {
     fetchRecetas();
   }, [restauranteId]);
 
-  // Si es edición, cargar datos del plato
   useEffect(() => {
     if (id) {
       const fetchPlato = async () => {
@@ -75,6 +72,15 @@ export default function PlatoForm() {
     }
   }, [id]);
 
+  const handleRecetaChange = (recetaId) => {
+    const receta = recetasBase.find(r => r.id === recetaId);
+    setFormData(prev => ({
+      ...prev,
+      receta_id: recetaId,
+      nombre: receta?.nombre || '',
+    }));
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -89,26 +95,14 @@ export default function PlatoForm() {
       setError('No se pudo determinar el restaurante');
       return;
     }
+    if (!formData.receta_id) {
+      setError('Selecciona una receta base');
+      return;
+    }
     setSaving(true);
     setError(null);
 
     try {
-      let recetaId = formData.receta_id;
-
-      if (!id) {
-        const { data: newReceta, error: recetaError } = await supabase
-          .from('recetas_base')
-          .insert([{
-            restaurante_id: restauranteId,
-            nombre: formData.nombre,
-            porciones_base: 1,
-          }])
-          .select('id');
-        if (recetaError) throw recetaError;
-        recetaId = newReceta?.[0]?.id;
-        if (!recetaId) throw new Error('No se pudo crear la receta base');
-      }
-
       const dataToSave = {
         restaurante_id: restauranteId,
         nombre: formData.nombre,
@@ -116,7 +110,7 @@ export default function PlatoForm() {
         precio_venta: parseFloat(formData.precio_venta),
         margen_objetivo: parseFloat(formData.margen_objetivo) || 70,
         factor_porcion: parseFloat(formData.factor_porcion) || 1,
-        receta_id: recetaId,
+        receta_id: formData.receta_id,
         activo: formData.activo,
         updated_at: new Date().toISOString(),
       };
@@ -161,7 +155,6 @@ export default function PlatoForm() {
 
   return (
     <div className="min-h-screen bg-cream pb-8">
-      {/* Header */}
       <header className="sticky top-0 z-40 w-full border-b border-warm-gray/20 bg-cream/95 backdrop-blur-sm">
         <div className="flex items-center justify-between px-4 h-16">
           <button
@@ -188,17 +181,27 @@ export default function PlatoForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-ink mb-1">
-              Nombre del plato *
+              Receta base *
             </label>
-            <input
-              type="text"
-              name="nombre"
-              value={formData.nombre}
-              onChange={handleChange}
+            <select
+              name="receta_id"
+              value={formData.receta_id}
+              onChange={e => handleRecetaChange(e.target.value)}
               required
               className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-              placeholder="Ej: Risotto de Hongos"
-            />
+            >
+              <option value="">Selecciona una receta...</option>
+              {recetasBase.map(rb => (
+                <option key={rb.id} value={rb.id}>
+                  {rb.nombre} ({rb.porciones_base} porc.)
+                </option>
+              ))}
+            </select>
+            {recetasBase.length === 0 && (
+              <p className="text-xs text-warm-gray mt-1">
+                No hay recetas. Crea una desde la sección Recetas primero.
+              </p>
+            )}
           </div>
 
           <div>
@@ -221,19 +224,18 @@ export default function PlatoForm() {
 
           <div>
             <label className="block text-sm font-medium text-ink mb-1">
-              Precio de venta (€) *
+              Cantidad / Ración
             </label>
-            <input
-              type="number"
-              name="precio_venta"
-              value={formData.precio_venta}
+            <select
+              name="factor_porcion"
+              value={formData.factor_porcion}
               onChange={handleChange}
-              required
-              step="0.01"
-              min="0"
               className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-              placeholder="Ej: 18.50"
-            />
+            >
+              {FACTORES.map(f => (
+                <option key={f.value} value={f.value}>{f.label}</option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -251,54 +253,24 @@ export default function PlatoForm() {
               className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
               placeholder="70"
             />
-            <p className="text-xs text-warm-gray mt-1">
-              Si el margen real baja de este valor, se generará una alerta.
-            </p>
           </div>
 
-          {/* Factor de porción */}
           <div>
             <label className="block text-sm font-medium text-ink mb-1">
-              Factor de ración
+              Precio de venta (€) *
             </label>
-            <select
-              name="factor_porcion"
-              value={formData.factor_porcion}
+            <input
+              type="number"
+              name="precio_venta"
+              value={formData.precio_venta}
               onChange={handleChange}
+              required
+              step="0.01"
+              min="0"
               className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-            >
-              {FACTORES.map(f => (
-                <option key={f.value} value={f.value}>{f.label}</option>
-              ))}
-            </select>
-            <p className="text-xs text-warm-gray mt-1">
-              La receta base es para 1 persona. Ajusta según la ración que sirvas.
-            </p>
+              placeholder="Ej: 18.50"
+            />
           </div>
-
-          {/* Receta base (solo edición) */}
-          {id && (
-            <div>
-              <label className="block text-sm font-medium text-ink mb-1">
-                Receta base
-              </label>
-              <select
-                name="receta_id"
-                value={formData.receta_id}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-              >
-                {recetasBase.map(rb => (
-                  <option key={rb.id} value={rb.id}>
-                    {rb.nombre} ({rb.porciones_base} porc.)
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-warm-gray mt-1">
-                Puedes cambiar la receta base o gestionarla desde la sección Recetas.
-              </p>
-            </div>
-          )}
 
           <div className="flex items-center gap-2">
             <input

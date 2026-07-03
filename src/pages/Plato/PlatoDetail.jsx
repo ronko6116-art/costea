@@ -393,7 +393,7 @@ export default function PlatoDetail() {
               <Trash2 className="h-5 w-5" />
             </button>
             <button
-              onClick={() => navigate(`/plato/${plato.plato_id}/receta`)}
+              onClick={() => navigate(`/recetas/${plato.receta_id}/ingredientes`)}
               className="bg-olive text-white rounded-full px-4 py-2 text-sm font-semibold"
             >
               <Plus className="h-4 w-4 inline mr-1" />
@@ -473,7 +473,7 @@ export default function PlatoDetail() {
 
           {plato.factor_porcion && plato.factor_porcion !== 1 && (
             <div className="mt-2 text-xs text-warm-gray">
-              Factor de ración: {plato.factor_porcion}x
+              Ración: {plato.factor_porcion === 0.25 ? 'Tapa' : plato.factor_porcion === 0.5 ? 'Media' : plato.factor_porcion + 'x'}
             </div>
           )}
 
@@ -619,7 +619,7 @@ export default function PlatoDetail() {
             <div className="px-5 py-8 text-center text-ink-soft">
               <p>Esta receta aún no tiene ingredientes.</p>
               <button
-                onClick={() => navigate(`/plato/${plato.plato_id}/receta`)}
+                onClick={() => navigate(`/recetas/${plato.receta_id}/ingredientes`)}
                 className="mt-2 text-terracotta font-semibold"
               >
                 Gestionar receta
