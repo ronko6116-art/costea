@@ -7,7 +7,6 @@ import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Plus, Edit, Trash2, Search, ChevronDown, TrendingUp } from 'lucide-react';
 import { CATEGORIAS } from '../../utils/categorias';
 import { formatearMoneda } from '../../functions/formatters';
-import PrecioEvolucion from '../../components/PrecioEvolucion';
 
 export default function IngredienteList() {
   const navigate = useNavigate();
@@ -18,7 +17,6 @@ export default function IngredienteList() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [categoriasAbiertas, setCategoriasAbiertas] = useState({});
-  const [ingredienteEvolucion, setIngredienteEvolucion] = useState(null);
 
   useEffect(() => {
     if (!restauranteId) return;
@@ -147,7 +145,7 @@ export default function IngredienteList() {
                           </div>
                           <div className="flex gap-1">
                             <button
-                              onClick={() => setIngredienteEvolucion(ing)}
+                              onClick={() => navigate(`/graficos?ingrediente=${ing.id}`)}
                               className="p-2 rounded-full hover:bg-terracotta/10 text-terracotta transition-colors"
                               title="Ver evolución de precio"
                             >
@@ -176,25 +174,6 @@ export default function IngredienteList() {
           </div>
         )}
       </main>
-
-      {/* Modal evolución de precio */}
-      {ingredienteEvolucion && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-          onClick={() => setIngredienteEvolucion(null)}
-        >
-          <div className="fixed inset-0 bg-black/40 transition-opacity" />
-          <div
-            className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl p-5 sm:p-6 animate-slide-up"
-            onClick={e => e.stopPropagation()}
-          >
-            <PrecioEvolucion
-              ingredienteId={ingredienteEvolucion.id}
-              onClose={() => setIngredienteEvolucion(null)}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
