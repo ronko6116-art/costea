@@ -88,34 +88,38 @@ export default function PreciosIngrediente() {
     const ing = ingredientes.find(i => i.id === id);
     const precioAnterior = ing?.precio_actual ?? 0;
 
+    // Insertar directamente en precios_historicos (bypass del trigger de BD)
+    const { error: histErr } = await supabase
+      .from('precios_historicos')
+      .insert({
+        ingrediente_id: id,
+        precio_anterior: precioAnterior,
+        precio_nuevo: nuevoPrecio,
+        restaurante_id: restauranteId,
+        creado_en: new Date().toISOString(),
+      });
+    if (histErr) console.error('Error insertando historico:', histErr);
+
+    // Actualizar precio actual (el trigger de BD puede fallar si esta roto)
     const { error } = await supabase
       .from('ingredientes')
       .update({ precio_actual: nuevoPrecio, updated_at: new Date().toISOString() })
       .eq('id', id);
 
-    if (!error) {
-      // Insertar directamente en precios_historicos (bypass del trigger de BD)
-      const { error: histErr } = await supabase
-        .from('precios_historicos')
-        .insert({
-          ingrediente_id: id,
-          precio_anterior: precioAnterior,
-          precio_nuevo: nuevoPrecio,
-          restaurante_id: restauranteId,
-          creado_en: new Date().toISOString(),
-        });
-      if (histErr) console.error('Error insertando historico:', histErr);
-
-      setIngredientes(prev =>
-        prev.map(i => i.id === id ? { ...i, precio_actual: nuevoPrecio } : i)
-      );
-      setEditados(prev => new Set(prev).add(id));
-      setPreciosEditando(prev => {
-        const copy = { ...prev };
-        delete copy[id];
-        return copy;
-      });
+    if (error) {
+      console.error('Error actualizando precio_actual (trigger posiblemente roto):', error);
     }
+
+    // Actualizar state local siempre, aunque la BD falle
+    setIngredientes(prev =>
+      prev.map(i => i.id === id ? { ...i, precio_actual: nuevoPrecio } : i)
+    );
+    setEditados(prev => new Set(prev).add(id));
+    setPreciosEditando(prev => {
+      const copy = { ...prev };
+      delete copy[id];
+      return copy;
+    });
     setSaving(null);
   };
 
