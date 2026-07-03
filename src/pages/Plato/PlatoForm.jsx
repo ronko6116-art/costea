@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
-import { ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Info } from 'lucide-react';
+import { formatearMoneda } from '../../functions/formatters';
 
 const FACTORES = [
   { value: '0.25', label: 'Tapa (0.25x)' },
@@ -20,6 +21,8 @@ export default function PlatoForm() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [costeReceta, setCosteReceta] = useState(null);
+  const [precioSugerido, setPrecioSugerido] = useState(null);
   const [recetasBase, setRecetasBase] = useState([]);
   const [formData, setFormData] = useState({
     nombre: '',
@@ -71,6 +74,47 @@ export default function PlatoForm() {
       fetchPlato();
     }
   }, [id]);
+
+  const calcularCoste = useCallback(async (recetaId, factor, margen) => {
+    if (!recetaId) {
+      setCosteReceta(null);
+      setPrecioSugerido(null);
+      return;
+    }
+    const factorNum = parseFloat(factor) || 1;
+    try {
+      const { data: lineas } = await supabase
+        .from('receta_lineas')
+        .select(`cantidad, merma_pct, ingrediente:ingredientes(precio_actual)`)
+        .eq('receta_id', recetaId);
+      if (!lineas?.length) {
+        setCosteReceta(0);
+        setPrecioSugerido(null);
+        return;
+      }
+      const costeBase = lineas.reduce((sum, l) => {
+        const precio = l.ingrediente?.precio_actual || 0;
+        const cant = l.cantidad || 0;
+        const merma = (l.merma_pct || 0) / 100;
+        return sum + precio * cant * (1 + merma);
+      }, 0);
+      const costeConFactor = costeBase * factorNum;
+      setCosteReceta(costeConFactor);
+      const margenNum = parseFloat(margen);
+      if (margenNum > 0 && margenNum < 100) {
+        setPrecioSugerido(costeConFactor / (1 - margenNum / 100));
+      } else {
+        setPrecioSugerido(null);
+      }
+    } catch {
+      setCosteReceta(null);
+      setPrecioSugerido(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    calcularCoste(formData.receta_id, formData.factor_porcion, formData.margen_objetivo);
+  }, [formData.receta_id, formData.factor_porcion, formData.margen_objetivo, calcularCoste]);
 
   const handleRecetaChange = (recetaId) => {
     const receta = recetasBase.find(r => r.id === recetaId);
@@ -270,6 +314,22 @@ export default function PlatoForm() {
               className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
               placeholder="Ej: 18.50"
             />
+            {costeReceta !== null && (
+              <div className="mt-2 flex items-start gap-2 text-xs bg-olive/5 p-3 rounded-lg border border-olive/10">
+                <Info className="h-4 w-4 text-olive shrink-0 mt-0.5" />
+                <div>
+                  <span className="text-ink-soft">Coste ración: </span>
+                  <span className="font-semibold text-ink">{formatearMoneda(costeReceta)}</span>
+                  {precioSugerido !== null && (
+                    <>
+                      <span className="text-ink-soft ml-2">· Sugerido: </span>
+                      <span className="font-semibold text-olive-dark">{formatearMoneda(precioSugerido)}</span>
+                      <span className="text-ink-soft"> (margen {formData.margen_objetivo}%)</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

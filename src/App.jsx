@@ -90,7 +90,6 @@ function AppRoutes() {
     <Route path="/ingredientes" element={<ProtectedRoute><AppLayout><IngredienteList /></AppLayout></ProtectedRoute>} />
     <Route path="/ingredientes/nuevo" element={<ProtectedRoute><AppLayout><IngredienteForm /></AppLayout></ProtectedRoute>} />
     <Route path="/ingredientes/editar/:id" element={<ProtectedRoute><AppLayout><IngredienteForm /></AppLayout></ProtectedRoute>} />
-    <Route path="/plato/:id/receta" element={<ProtectedRoute><AppLayout><RecetaManager /></AppLayout></ProtectedRoute>} />
     <Route path="/recetas" element={<ProtectedRoute><AppLayout><RecetasBase /></AppLayout></ProtectedRoute>} />
     <Route path="/recetas/:id/ingredientes" element={<ProtectedRoute><AppLayout><RecetaManager /></AppLayout></ProtectedRoute>} />
     <Route path="/graficos" element={<ProtectedRoute><AppLayout><Graficos /></AppLayout></ProtectedRoute>} />
