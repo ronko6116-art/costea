@@ -25,6 +25,7 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
   const [ingrediente, setIngrediente] = useState(null);
 
   useEffect(() => {
+    if (!restauranteId) return;
     const fetch = async () => {
       
       const { data: ing, error: errIng } = await supabase
@@ -59,7 +60,7 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
       setLoading(false);
     };
     fetch();
-  }, [ingredienteId]);
+  }, [ingredienteId, restauranteId]);
 
   return (
     <div>
