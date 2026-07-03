@@ -147,7 +147,6 @@ export default function PlatoDetail() {
     });
     setMostrarNuevaCategoria(false);
     setMostrarNuevoProveedor(false);
-    setVistaEvolucion(false);
     setIngredienteEditando(linea);
   };
 
@@ -155,7 +154,6 @@ export default function PlatoDetail() {
     setIngredienteEditando(null);
     setMostrarNuevaCategoria(false);
     setMostrarNuevoProveedor(false);
-    setVistaEvolucion(false);
   };
 
   const handleEditChange = (field, value) => {
