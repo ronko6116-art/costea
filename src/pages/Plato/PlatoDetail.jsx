@@ -17,6 +17,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import PrecioEvolucion from '../../components/PrecioEvolucion';
+import { formatearMoneda } from '../../functions/formatters';
 
 export default function PlatoDetail() {
   const { id } = useParams();
@@ -322,11 +323,6 @@ export default function PlatoDetail() {
     navigate('/dashboard', { replace: true });
   };
 
-  const formatoMoneda = new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR',
-  });
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-cream">
@@ -427,19 +423,19 @@ export default function PlatoDetail() {
                   onClick={() => { setTempPrecioVenta(plato.precio_venta); setEditandoPrecioVenta(true); }}
                   className="font-bold text-ink text-lg inline-flex items-center gap-1.5 bg-warm-gray/5 rounded-lg px-2 py-1 active:bg-warm-gray/10 transition-colors"
                 >
-                  {formatoMoneda.format(plato.precio_venta)}
+                  {formatearMoneda(plato.precio_venta)}
                   <Edit3 className="h-3.5 w-3.5 text-warm-gray" />
                 </button>
               ) : (
                 <p className="font-bold text-ink text-lg opacity-60">
-                  {formatoMoneda.format(plato.precio_venta)}
+                  {formatearMoneda(plato.precio_venta)}
                 </p>
               )}
             </div>
             <div>
               <p className="text-xs text-warm-gray">Coste actual</p>
               <p className="font-bold text-ink text-lg">
-                {formatoMoneda.format(plato.coste_total)}
+                {formatearMoneda(plato.coste_total)}
               </p>
             </div>
             <div>
@@ -503,7 +499,7 @@ export default function PlatoDetail() {
                   <div className={`flex items-center gap-1.5 text-xs ${
                     parseFloat(tempPrecioVenta) < precioMinimo ? 'text-orange-600' : 'text-warm-gray'
                   }`}>
-                    <span>Mín. sugerido {formatoMoneda.format(precioMinimo)}</span>
+                    <span>Mín. sugerido {formatearMoneda(precioMinimo)}</span>
                     {parseFloat(tempPrecioVenta) < precioMinimo && (
                       <button
                         onClick={() => setTempPrecioVenta(precioMinimo.toFixed(2))}
@@ -642,13 +638,13 @@ export default function PlatoDetail() {
                           </span>
                         )}
                         <span>
-                          {formatoMoneda.format(linea.precioUnitario)} / {linea.ingrediente?.unidad_medida || 'u'}
+                          {formatearMoneda(linea.precioUnitario)} / {linea.ingrediente?.unidad_medida || 'u'}
                         </span>
                       </div>
                     </div>
                     <div className="text-right ml-4 flex-shrink-0">
                       <p className="font-semibold text-ink">
-                        {formatoMoneda.format(linea.costeLinea)}
+                        {formatearMoneda(linea.costeLinea)}
                       </p>
                       <p className="text-xs text-warm-gray">
                         {plato.coste_total > 0 ? ((linea.costeLinea / plato.coste_total) * 100).toFixed(1) : 0}%
@@ -663,7 +659,7 @@ export default function PlatoDetail() {
           <div className="px-5 py-4 bg-cream/50 border-t border-warm-gray/10 flex justify-between items-center">
             <span className="font-semibold text-ink">Coste total</span>
             <span className="font-bold text-ink text-lg">
-              {formatoMoneda.format(plato.coste_total)}
+              {formatearMoneda(plato.coste_total)}
             </span>
           </div>
         </div>

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import { CATEGORIAS } from '../../utils/categorias';
@@ -10,6 +11,7 @@ export default function IngredienteForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   useAuth();
+  const { restauranteId } = useRestaurant();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -22,29 +24,11 @@ export default function IngredienteForm() {
     nuevoProveedorNombre: '',
   });
   const [proveedores, setProveedores] = useState([]);
-  const [restauranteId, setRestauranteId] = useState(null);
   const [mostrarNuevoProveedor, setMostrarNuevoProveedor] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      // Obtener restaurante
-      const savedId = localStorage.getItem('restauranteId');
-      let rId;
-      if (savedId) {
-        rId = savedId;
-      } else {
-        const { data: rData, error: rError } = await supabase
-          .from('restaurantes')
-          .select('id')
-          .limit(1)
-          .single();
-        if (rError) {
-          setError('No se encontró restaurante');
-          return;
-        }
-        rId = rData.id;
-      }
-      setRestauranteId(rId);
+      if (!restauranteId) return;
 
       // Obtener todos los proveedores (sin filtrar por restaurante)
       const { data: pData, error: pError } = await supabase

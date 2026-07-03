@@ -1,6 +1,7 @@
 // src/Dashboard.jsx
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -16,53 +17,31 @@ import Onboarding from './Onboarding';
 export default function Dashboard() {
   const { session, signOut } = useAuth();
   const navigate = useNavigate();
-  const [restaurantes, setRestaurantes] = useState([]);
-  const [restauranteSeleccionado, setRestauranteSeleccionado] = useState(null);
+  const { restaurantes, restaurante: restauranteSeleccionado, restauranteId, setRestaurante, loading: loadingRest } = useRestaurant();
   const [platos, setPlatos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingPlatos, setLoadingPlatos] = useState(true);
   const [mostrarSelector, setMostrarSelector] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [showNewRestaurant, setShowNewRestaurant] = useState(false);
   const [newRestaurantName, setNewRestaurantName] = useState('');
   const [creandoRest, setCreandoRest] = useState(false);
 
-  // Cargar restaurantes del usuario
   useEffect(() => {
-    const fetchRestaurantes = async () => {
-      const { data, error } = await supabase
-        .from('restaurantes')
-        .select('*')
-        .order('nombre');
-
-      if (error) {
-        console.error(error);
-        return;
-      }
-
-      setRestaurantes(data);
-      if (data.length > 0) {
-        const savedId = localStorage.getItem('restauranteId');
-        const saved = data.find(r => r.id === savedId);
-        setRestauranteSeleccionado(saved || data[0]);
-      } else {
-        setNeedsOnboarding(true);
-      }
-      setLoading(false);
-    };
-
-    fetchRestaurantes();
-  }, []);
+    if (!loadingRest && restaurantes.length === 0) {
+      setNeedsOnboarding(true);
+    }
+  }, [loadingRest, restaurantes]);
 
   // Cargar platos al cambiar de restaurante
   useEffect(() => {
-    if (!restauranteSeleccionado) return;
+    if (!restauranteId) return;
 
     const fetchPlatos = async () => {
-      setLoading(true);
+      setLoadingPlatos(true);
       const { data, error } = await supabase
         .from('vista_coste_platos')
         .select('*')
-        .eq('restaurante_id', restauranteSeleccionado.id)
+        .eq('restaurante_id', restauranteId)
         .order('plato_nombre');
 
       if (error) {
@@ -71,18 +50,11 @@ export default function Dashboard() {
         setPlatos(data);
       }
 
-      setLoading(false);
+      setLoadingPlatos(false);
     };
 
     fetchPlatos();
-  }, [restauranteSeleccionado]);
-
-  // Persist restaurant selection across navigations
-  useEffect(() => {
-    if (restauranteSeleccionado) {
-      localStorage.setItem('restauranteId', restauranteSeleccionado.id);
-    }
-  }, [restauranteSeleccionado]);
+  }, [restauranteId]);
 
   // Alertas de margen computadas localmente desde los platos
   const alertasMargen = useMemo(() =>
@@ -96,8 +68,7 @@ export default function Dashboard() {
   };
 
   const handleOnboardingComplete = (nuevoRestaurante) => {
-    setRestaurantes([nuevoRestaurante]);
-    setRestauranteSeleccionado(nuevoRestaurante);
+    setRestaurante(nuevoRestaurante);
     setNeedsOnboarding(false);
   };
 
@@ -119,17 +90,10 @@ export default function Dashboard() {
       alert('Error al crear restaurante: ' + error.message);
       return;
     }
-    setRestaurantes(prev => [...prev, data]);
-    setRestauranteSeleccionado(data);
+    setRestaurante(data);
     setShowNewRestaurant(false);
     setNewRestaurantName('');
   };
-
-  // Formateador de moneda
-  const formatoMoneda = new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR',
-  });
 
   if (needsOnboarding) {
     return (
@@ -140,7 +104,7 @@ export default function Dashboard() {
     );
   }
 
-  if (loading && restaurantes.length === 0) {
+  if (loadingRest && restaurantes.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-cream">
         <div className="text-center">
@@ -200,7 +164,7 @@ export default function Dashboard() {
                   <button
                     key={r.id}
                     onClick={() => {
-                      setRestauranteSeleccionado(r);
+                      setRestaurante(r);
                       setMostrarSelector(false);
                     }}
                     className={`w-full text-left px-4 py-3 hover:bg-cream transition-colors ${
@@ -281,7 +245,7 @@ export default function Dashboard() {
         )}
 
         {/* Lista de platos en formato tarjeta (mobile-first) */}
-        {loading ? (
+        {loadingPlatos ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="bg-white rounded-xl p-4 shadow-sm animate-pulse">
@@ -300,7 +264,6 @@ export default function Dashboard() {
                 <PlatoCard
                     key={plato.plato_id}
                     plato={plato}
-                    formatoMoneda={formatoMoneda}
                     onPress={() => {
                     console.log('Navegar a detalle de', plato.plato_nombre);
                     navigate(`/plato/${plato.plato_id}`);

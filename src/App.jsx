@@ -1,6 +1,7 @@
 // src/App.jsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { RestaurantProvider } from './contexts/RestaurantContext';
 import { AlertTriangle } from 'lucide-react';
 import Login from './pages/Auth/Login';
 import Home from './pages/Home/Home';
@@ -101,7 +102,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <RestaurantProvider>
+        <AppRoutes />
+      </RestaurantProvider>
     </AuthProvider>
   );
 }

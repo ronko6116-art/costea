@@ -2,32 +2,23 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Plus, Edit, Trash2, Search, ChevronDown, TrendingUp } from 'lucide-react';
 import { CATEGORIAS } from '../../utils/categorias';
+import { formatearMoneda } from '../../functions/formatters';
 import PrecioEvolucion from '../../components/PrecioEvolucion';
 
 export default function IngredienteList() {
   const navigate = useNavigate();
   useAuth();
+  const { restauranteId } = useRestaurant();
   const [ingredientes, setIngredientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [categoriasAbiertas, setCategoriasAbiertas] = useState({});
   const [ingredienteEvolucion, setIngredienteEvolucion] = useState(null);
-  const [restauranteId, setRestauranteId] = useState(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem('restauranteId');
-    if (savedId) {
-      setRestauranteId(savedId);
-      return;
-    }
-    supabase.from('restaurantes').select('id').limit(1).single().then(({ data }) => {
-      if (data) setRestauranteId(data.id);
-    });
-  }, []);
 
   useEffect(() => {
     if (!restauranteId) return;
@@ -80,11 +71,6 @@ export default function IngredienteList() {
   const toggleCategoria = (cat) => {
     setCategoriasAbiertas(prev => ({ ...prev, [cat]: !prev[cat] }));
   };
-
-  const formatoMoneda = new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR',
-  });
 
   return (
     <div className="min-h-screen bg-cream pb-8">
@@ -155,7 +141,7 @@ export default function IngredienteList() {
                           <div>
                             <p className="font-medium text-ink text-sm">{ing.nombre}</p>
                             <div className="flex flex-wrap gap-2 text-xs text-warm-gray">
-                              <span>{formatoMoneda.format(ing.precio_actual)} / {ing.unidad_medida}</span>
+                              <span>{formatearMoneda(ing.precio_actual)} / {ing.unidad_medida}</span>
                               {ing.proveedor && <span>· {ing.proveedor.nombre}</span>}
                             </div>
                           </div>

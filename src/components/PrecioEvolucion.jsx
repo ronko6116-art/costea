@@ -3,17 +3,15 @@ import { supabase } from '../supabaseClient';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-
-function formatoCompacto(value) {
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(value);
-}
+import { formatearMonedaCompacto } from '../functions/formatters';
+import { useRestaurant } from '../contexts/RestaurantContext';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white border border-warm-gray/20 rounded-lg px-3 py-2 shadow-md text-sm">
         <p className="text-warm-gray text-xs">{label}</p>
-        <p className="font-bold text-ink">{formatoCompacto(payload[0].value)}</p>
+        <p className="font-bold text-ink">{formatearMonedaCompacto(payload[0].value)}</p>
       </div>
     );
   }
@@ -21,14 +19,13 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function PrecioEvolucion({ ingredienteId, onClose }) {
+  const { restauranteId } = useRestaurant();
   const [datos, setDatos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [ingrediente, setIngrediente] = useState(null);
 
   useEffect(() => {
     const fetch = async () => {
-      // Try to get restaurant_id from localStorage for filtering
-      const restauranteId = localStorage.getItem('restauranteId');
       
       const { data: ing, error: errIng } = await supabase
         .from('ingredientes')
@@ -71,7 +68,7 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
           <h4 className="font-semibold text-ink">{ingrediente?.nombre || 'Cargando...'}</h4>
           {ingrediente && (
             <p className="text-xs text-warm-gray">
-              Precio actual: {formatoCompacto(ingrediente.precio_actual)} / {ingrediente.unidad_medida}
+              Precio actual: {formatearMonedaCompacto(ingrediente.precio_actual)} / {ingrediente.unidad_medida}
             </p>
           )}
         </div>

@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Plus, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { CATEGORIAS } from '../../utils/categorias';
+import { formatearMoneda } from '../../functions/formatters';
 
 export default function RecetaManager() {
   const { id } = useParams(); // id del plato
   const navigate = useNavigate();
   useAuth();
+  const { restauranteId } = useRestaurant();
   const [plato, setPlato] = useState(null);
   const [receta, setReceta] = useState([]);
   const [ingredientesDisponibles, setIngredientesDisponibles] = useState([]);
@@ -66,23 +69,20 @@ export default function RecetaManager() {
         if (ingredientesError) throw ingredientesError;
 
         // Fallback 1: probar con el restaurante activo del usuario
-        if (!ingredientesData?.length) {
-          const localStorageId = localStorage.getItem('restauranteId');
-          if (localStorageId && localStorageId !== restauranteBusqueda) {
-            console.warn('RecetaManager: plato.restaurante_id=%s no tiene ingredientes, fallback a localStorage=%s', restauranteBusqueda, localStorageId);
-            const { data: fallbackData, error: fallbackError } = await supabase
-              .from('ingredientes')
-              .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id')
-              .eq('restaurante_id', localStorageId);
-            if (!fallbackError && fallbackData?.length) {
-              ingredientesData = fallbackData;
-            }
+        if (!ingredientesData?.length && restauranteId && restauranteId !== restauranteBusqueda) {
+          console.warn('RecetaManager: plato.restaurante_id=%s no tiene ingredientes, fallback a restaurante activo=%s', restauranteBusqueda, restauranteId);
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('ingredientes')
+            .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id')
+            .eq('restaurante_id', restauranteId);
+          if (!fallbackError && fallbackData?.length) {
+            ingredientesData = fallbackData;
           }
         }
 
         // Fallback 2: si sigue vacío, traer todos (como hace IngredienteList)
         if (!ingredientesData?.length) {
-          console.warn('RecetaManager: sin ingredientes para restaurante_id=%s (plato) ni localStorage=%s, trayendo todos', restauranteBusqueda, localStorage.getItem('restauranteId'));
+          console.warn('RecetaManager: sin ingredientes para restaurante_id=%s (plato) ni activo=%s, trayendo todos', restauranteBusqueda, restauranteId);
           const { data: allData, error: allError } = await supabase
             .from('ingredientes')
             .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id')
@@ -295,11 +295,6 @@ export default function RecetaManager() {
     navigate(`/plato/${id}`);
   };
 
-  const formatoMoneda = new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR',
-  });
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-cream">
@@ -378,7 +373,7 @@ export default function RecetaManager() {
                         <span className="text-orange-500">merma {linea.merma_pct}%</span>
                       )}
                       <span>
-                        {formatoMoneda.format(linea.ingrediente.precio_actual)} / {linea.ingrediente.unidad_medida}
+                        {formatearMoneda(linea.ingrediente.precio_actual)} / {linea.ingrediente.unidad_medida}
                       </span>
                     </div>
                   </div>
@@ -491,7 +486,7 @@ export default function RecetaManager() {
                       {ingredientesDisponibles.map((i) => (
                         <option key={i.id} value={i.id}>
                           {i.precioReciente
-                            ? `${i.nombre} - ${formatoMoneda.format(i.precioReciente.precio)}/${i.unidad_medida} - ${i.precioReciente.proveedor?.nombre || '?'}`
+                            ? `${i.nombre} - ${formatearMoneda(i.precioReciente.precio)}/${i.unidad_medida} - ${i.precioReciente.proveedor?.nombre || '?'}`
                             : `${i.nombre} - sin precio`
                           }
                         </option>

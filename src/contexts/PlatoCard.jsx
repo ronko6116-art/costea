@@ -1,7 +1,8 @@
 // src/PlatoCard.jsx
 import { TrendingDown, TrendingUp, ChevronRight, AlertTriangle } from 'lucide-react';
+import { formatearMoneda } from '../functions/formatters';
 
-export default function PlatoCard({ plato, formatoMoneda, onPress }) {
+export default function PlatoCard({ plato, onPress }) {
   const margenBajo = plato.margen_pct < 50;
   const margenCritico = plato.margen_pct < 35;
 
@@ -42,13 +43,13 @@ export default function PlatoCard({ plato, formatoMoneda, onPress }) {
           <div className="flex flex-col">
             <span className="text-xs text-warm-gray">Venta</span>
             <span className="font-semibold text-ink">
-              {formatoMoneda.format(plato.precio_venta)}
+              {formatearMoneda(plato.precio_venta)}
             </span>
           </div>
           <div className="flex flex-col items-center">
             <span className="text-xs text-warm-gray">Coste</span>
             <span className="font-semibold text-ink">
-              {formatoMoneda.format(plato.coste_total)}
+              {formatearMoneda(plato.coste_total)}
             </span>
           </div>
           <div className="flex flex-col items-end">

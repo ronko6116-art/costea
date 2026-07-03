@@ -6,9 +6,12 @@ import {
   Check, X, Loader2
 } from 'lucide-react';
 import { ORDEN_CATEGORIAS } from '../../utils/categorias';
+import { formatearPrecioUnitario } from '../../functions/formatters';
+import { useRestaurant } from '../../contexts/RestaurantContext';
 
 export default function PreciosIngrediente() {
   const navigate = useNavigate();
+  const { restauranteId } = useRestaurant();
   const [ingredientes, setIngredientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
@@ -16,18 +19,6 @@ export default function PreciosIngrediente() {
   const [preciosEditando, setPreciosEditando] = useState({});
   const [editados, setEditados] = useState(new Set());
   const [categoriasAbiertas, setCategoriasAbiertas] = useState({});
-  const [restauranteId, setRestauranteId] = useState(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem('restauranteId');
-    if (savedId) {
-      setRestauranteId(savedId);
-      return;
-    }
-    supabase.from('restaurantes').select('id').limit(1).single().then(({ data }) => {
-      if (data) setRestauranteId(data.id);
-    });
-  }, []);
 
   useEffect(() => {
     if (!restauranteId) return;
@@ -111,19 +102,6 @@ export default function PreciosIngrediente() {
       });
     }
     setSaving(null);
-  };
-
-  const formatearMoneda = (valor) =>
-    new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(valor || 0);
-
-  const formatearPrecioUnitario = (ing) => {
-    const precio = formatearMoneda(ing.precio_actual);
-    if (ing.unidad_medida === 'kg' || ing.unidad_medida === 'g' ||
-        ing.unidad_medida === 'l' || ing.unidad_medida === 'ml' ||
-        ing.unidad_medida === 'unidad' || ing.unidad_medida === 'docena') {
-      return `${precio} / ${ing.unidad_medida}`;
-    }
-    return precio;
   };
 
   const ingredienteCount = useMemo(

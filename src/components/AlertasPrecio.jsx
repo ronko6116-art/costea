@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { TrendingUp, TrendingDown, Minus, ChevronDown } from 'lucide-react';
-
-function formatoCompacto(value) {
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(value);
-}
+import { formatearMonedaCompacto } from '../functions/formatters';
 
 export default function AlertasPrecio({ restauranteId }) {
   const [ingredientes, setIngredientes] = useState([]);
@@ -95,13 +92,13 @@ export default function AlertasPrecio({ restauranteId }) {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-ink text-sm truncate">{ing.nombre}</p>
                   <p className="text-xs text-warm-gray">
-                    Media: {formatoCompacto(ing.media)} / {ing.unidad}
+                    Media: {formatearMonedaCompacto(ing.media)} / {ing.unidad}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 ml-3 shrink-0">
                   {flecha}
                   <span className="text-sm font-semibold text-ink">
-                    {formatoCompacto(ing.ultimo)}
+                    {formatearMonedaCompacto(ing.ultimo)}
                   </span>
                   <span className="text-[10px] text-warm-gray">/ {ing.unidad}</span>
                 </div>

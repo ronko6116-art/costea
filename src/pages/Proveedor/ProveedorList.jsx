@@ -2,27 +2,18 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Plus, Edit, Trash2, Search, Mail, Phone, StickyNote, ChevronDown, Package } from 'lucide-react';
+import { formatearMoneda } from '../../functions/formatters';
+import { useRestaurant } from '../../contexts/RestaurantContext';
 
 export default function ProveedorList() {
   const navigate = useNavigate();
+  const { restauranteId } = useRestaurant();
   const [proveedores, setProveedores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [expandido, setExpandido] = useState(null);
   const [productos, setProductos] = useState({});
-  const [restauranteId, setRestauranteId] = useState(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem('restauranteId');
-    if (savedId) {
-      setRestauranteId(savedId);
-      return;
-    }
-    supabase.from('restaurantes').select('id').limit(1).single().then(({ data }) => {
-      if (data) setRestauranteId(data.id);
-    });
-  }, []);
 
   useEffect(() => {
     if (!restauranteId) return;
@@ -96,11 +87,6 @@ export default function ProveedorList() {
   const filtered = proveedores.filter(p =>
     p.nombre.toLowerCase().includes(search.toLowerCase())
   );
-
-  const formatoMoneda = new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR',
-  });
 
   return (
     <div className="min-h-screen bg-cream pb-8">
@@ -234,7 +220,7 @@ export default function ProveedorList() {
                                 {item.categoria && (
                                   <span className="text-[11px] text-warm-gray bg-white rounded px-1.5 py-0.5">{item.categoria}</span>
                                 )}
-                                <span className="text-sm font-semibold text-ink">{formatoMoneda.format(item.precio)}</span>
+                                <span className="text-sm font-semibold text-ink">{formatearMoneda(item.precio)}</span>
                               </div>
                             </div>
                           ))}

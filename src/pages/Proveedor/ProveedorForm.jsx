@@ -1,6 +1,7 @@
 // src/ProveedorForm.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Save, Trash2, Phone, Mail, User, StickyNote } from 'lucide-react';
 
@@ -15,47 +16,35 @@ const ESTADO_INICIAL = {
 export default function ProveedorForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { restauranteId } = useRestaurant();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [restauranteId, setRestauranteId] = useState(null);
   const [formData, setFormData] = useState(ESTADO_INICIAL);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const { data: rData, error: rError } = await supabase
-        .from('restaurantes')
-        .select('id')
-        .limit(1)
+    if (!id) return;
+    const fetchProveedor = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('proveedores')
+        .select('*')
+        .eq('id', id)
         .single();
-      if (rError) {
-        setError('No se encontró ningún restaurante.');
-        return;
+      if (error) {
+        setError(error.message);
+      } else {
+        setFormData({
+          nombre: data.nombre || '',
+          persona_contacto: data.persona_contacto || '',
+          telefono: data.telefono || '',
+          email_facturacion: data.email_facturacion || '',
+          notas: data.notas || '',
+        });
       }
-      setRestauranteId(rData.id);
-
-      if (id) {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('proveedores')
-          .select('*')
-          .eq('id', id)
-          .single();
-        if (error) {
-          setError(error.message);
-        } else {
-          setFormData({
-            nombre: data.nombre || '',
-            persona_contacto: data.persona_contacto || '',
-            telefono: data.telefono || '',
-            email_facturacion: data.email_facturacion || '',
-            notas: data.notas || '',
-          });
-        }
-        setLoading(false);
-      }
+      setLoading(false);
     };
-    fetchData();
+    fetchProveedor();
   }, [id]);
 
   const handleChange = (e) => {

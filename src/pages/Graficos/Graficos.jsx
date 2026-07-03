@@ -1,24 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../supabaseClient';
 import { ArrowLeft } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useRestaurant } from '../../contexts/RestaurantContext';
 import AlertasPrecio from '../../components/AlertasPrecio';
 
 export default function Graficos() {
   const navigate = useNavigate();
-  const [restauranteId, setRestauranteId] = useState(null);
-
-  useEffect(() => {
-    const savedId = localStorage.getItem('restauranteId');
-    if (savedId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setRestauranteId(savedId);
-      return;
-    }
-    supabase.from('restaurantes').select('id').limit(1).single().then(({ data }) => {
-      if (data) setRestauranteId(data.id);
-    });
-  }, []);
+  const { restauranteId } = useRestaurant();
 
   return (
     <div className="min-h-screen bg-cream">

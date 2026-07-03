@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 
@@ -9,6 +10,7 @@ export default function PlatoForm() {
   const { id } = useParams(); // si existe, es edición
   const navigate = useNavigate();
   useAuth();
+  const { restauranteId, loading: loadingRest } = useRestaurant();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -19,28 +21,6 @@ export default function PlatoForm() {
     margen_objetivo: '70',
     activo: true,
   });
-  const [restauranteId, setRestauranteId] = useState(null);
-
-  useEffect(() => {
-    const fetchRestaurante = async () => {
-      const savedId = localStorage.getItem('restauranteId');
-      if (savedId) {
-        setRestauranteId(savedId);
-        return;
-      }
-      const { data, error } = await supabase
-        .from('restaurantes')
-        .select('id')
-        .limit(1)
-        .single();
-      if (error) {
-        setError('No se encontró ningún restaurante');
-        return;
-      }
-      setRestauranteId(data.id);
-    };
-    fetchRestaurante();
-  }, []);
 
   // Si es edición, cargar datos del plato
   useEffect(() => {
