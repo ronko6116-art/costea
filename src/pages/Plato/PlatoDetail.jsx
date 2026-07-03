@@ -83,7 +83,7 @@ export default function PlatoDetail() {
               proveedor_habitual_id
             )
           `)
-          .eq('plato_id', id);
+          .eq('receta_id', platoData.receta_id);
 
         if (recetaError) throw recetaError;
 
@@ -95,7 +95,7 @@ export default function PlatoDetail() {
             if (!ingrediente) return null;
             const precioUnitario = ingrediente.precio_actual || 0;
             const cantidadConMerma = linea.cantidad * (1 + (linea.merma_pct || 0) / 100);
-            const costeLinea = precioUnitario * cantidadConMerma;
+            const costeLinea = precioUnitario * cantidadConMerma * (platoData.factor_porcion || 1);
             return {
               ...linea,
               ingrediente,
@@ -470,6 +470,12 @@ export default function PlatoDetail() {
               </div>
             </div>
           </div>
+
+          {plato.factor_porcion && plato.factor_porcion !== 1 && (
+            <div className="mt-2 text-xs text-warm-gray">
+              Factor de ración: {plato.factor_porcion}x
+            </div>
+          )}
 
           {editandoPrecioVenta && (
             <div className="mt-3 pt-3 border-t border-warm-gray/10">

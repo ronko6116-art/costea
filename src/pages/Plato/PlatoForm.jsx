@@ -6,21 +6,45 @@ import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 
+const FACTORES = [
+  { value: '0.25', label: 'Tapa (0.25x)' },
+  { value: '0.5', label: 'Media ración (0.5x)' },
+  { value: '1', label: 'Ración (1x)' },
+  { value: '2', label: 'Doble ración (2x)' },
+];
+
 export default function PlatoForm() {
   const { id } = useParams(); // si existe, es edición
   const navigate = useNavigate();
   useAuth();
-  const { restauranteId, loading: loadingRest } = useRestaurant();
+  const { restauranteId } = useRestaurant();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [recetasBase, setRecetasBase] = useState([]);
   const [formData, setFormData] = useState({
     nombre: '',
     categoria: '',
     precio_venta: '',
     margen_objetivo: '70',
+    factor_porcion: '1',
+    receta_id: '',
     activo: true,
   });
+
+  // Cargar recetas base del restaurante (para selector)
+  useEffect(() => {
+    if (!restauranteId) return;
+    const fetchRecetas = async () => {
+      const { data } = await supabase
+        .from('recetas_base')
+        .select('id, nombre, porciones_base')
+        .eq('restaurante_id', restauranteId)
+        .order('nombre');
+      if (data) setRecetasBase(data);
+    };
+    fetchRecetas();
+  }, [restauranteId]);
 
   // Si es edición, cargar datos del plato
   useEffect(() => {
@@ -40,6 +64,8 @@ export default function PlatoForm() {
             categoria: data.categoria || '',
             precio_venta: data.precio_venta || '',
             margen_objetivo: data.margen_objetivo || '70',
+            factor_porcion: String(data.factor_porcion || '1'),
+            receta_id: data.receta_id || '',
             activo: data.activo !== undefined ? data.activo : true,
           });
         }
@@ -66,26 +92,42 @@ export default function PlatoForm() {
     setSaving(true);
     setError(null);
 
-    const dataToSave = {
-      restaurante_id: restauranteId,
-      nombre: formData.nombre,
-      categoria: formData.categoria || null,
-      precio_venta: parseFloat(formData.precio_venta),
-      margen_objetivo: parseFloat(formData.margen_objetivo) || 70,
-      activo: formData.activo,
-      updated_at: new Date().toISOString(),
-    };
-
     try {
+      let recetaId = formData.receta_id;
+
+      if (!id) {
+        const { data: newReceta, error: recetaError } = await supabase
+          .from('recetas_base')
+          .insert([{
+            restaurante_id: restauranteId,
+            nombre: formData.nombre,
+            porciones_base: 1,
+          }])
+          .select('id');
+        if (recetaError) throw recetaError;
+        recetaId = newReceta?.[0]?.id;
+        if (!recetaId) throw new Error('No se pudo crear la receta base');
+      }
+
+      const dataToSave = {
+        restaurante_id: restauranteId,
+        nombre: formData.nombre,
+        categoria: formData.categoria || null,
+        precio_venta: parseFloat(formData.precio_venta),
+        margen_objetivo: parseFloat(formData.margen_objetivo) || 70,
+        factor_porcion: parseFloat(formData.factor_porcion) || 1,
+        receta_id: recetaId,
+        activo: formData.activo,
+        updated_at: new Date().toISOString(),
+      };
+
       let result;
       if (id) {
-        // Actualizar
         result = await supabase
           .from('platos')
           .update(dataToSave)
           .eq('id', id);
       } else {
-        // Crear
         dataToSave.created_at = new Date().toISOString();
         result = await supabase
           .from('platos')
@@ -213,6 +255,50 @@ export default function PlatoForm() {
               Si el margen real baja de este valor, se generará una alerta.
             </p>
           </div>
+
+          {/* Factor de porción */}
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">
+              Factor de ración
+            </label>
+            <select
+              name="factor_porcion"
+              value={formData.factor_porcion}
+              onChange={handleChange}
+              className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+            >
+              {FACTORES.map(f => (
+                <option key={f.value} value={f.value}>{f.label}</option>
+              ))}
+            </select>
+            <p className="text-xs text-warm-gray mt-1">
+              La receta base es para 1 persona. Ajusta según la ración que sirvas.
+            </p>
+          </div>
+
+          {/* Receta base (solo edición) */}
+          {id && (
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1">
+                Receta base
+              </label>
+              <select
+                name="receta_id"
+                value={formData.receta_id}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+              >
+                {recetasBase.map(rb => (
+                  <option key={rb.id} value={rb.id}>
+                    {rb.nombre} ({rb.porciones_base} porc.)
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-warm-gray mt-1">
+                Puedes cambiar la receta base o gestionarla desde la sección Recetas.
+              </p>
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <input

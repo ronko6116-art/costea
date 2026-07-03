@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
@@ -8,11 +8,14 @@ import { CATEGORIAS } from '../../utils/categorias';
 import { formatearMoneda } from '../../functions/formatters';
 
 export default function RecetaManager() {
-  const { id } = useParams(); // id del plato
+  const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isRecetaBaseMode = location.pathname.startsWith('/recetas/');
   useAuth();
   const { restauranteId } = useRestaurant();
   const [plato, setPlato] = useState(null);
+  const [recetaBase, setRecetaBase] = useState(null);
   const [receta, setReceta] = useState([]);
   const [ingredientesDisponibles, setIngredientesDisponibles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,19 +33,34 @@ export default function RecetaManager() {
 
   // Cargar datos
   useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
-      try {
-        // Obtener datos del plato
-        const { data: platoData, error: platoError } = await supabase
-          .from('platos')
-          .select('*')
-          .eq('id', id)
-          .single();
-        if (platoError) throw platoError;
-        setPlato(platoData);
+    if (!id) return;
 
-        // Obtener receta actual con ingredientes
+    const fetchData = async () => {
+      try {
+        let recetaId, restauranteBusqueda;
+
+        if (isRecetaBaseMode) {
+          const { data: rbData, error: rbError } = await supabase
+            .from('recetas_base')
+            .select('*')
+            .eq('id', id)
+            .single();
+          if (rbError) throw rbError;
+          setRecetaBase(rbData);
+          recetaId = rbData.id;
+          restauranteBusqueda = rbData.restaurante_id;
+        } else {
+          const { data: platoData, error: platoError } = await supabase
+            .from('platos')
+            .select('*, receta_base:receta_id(*)')
+            .eq('id', id)
+            .single();
+          if (platoError) throw platoError;
+          setPlato(platoData);
+          if (platoData.receta_base) setRecetaBase(platoData.receta_base);
+          recetaId = platoData.receta_id;
+          restauranteBusqueda = platoData.restaurante_id;
+        }
         const { data: recetaData, error: recetaError } = await supabase
           .from('receta_lineas')
           .select(`
@@ -56,12 +74,11 @@ export default function RecetaManager() {
               precio_actual
             )
           `)
-          .eq('plato_id', id);
+          .eq('receta_id', recetaId);
         if (recetaError) throw recetaError;
         setReceta(recetaData || []);
 
-        // Obtener ingredientes del restaurante del plato
-        let restauranteBusqueda = platoData.restaurante_id;
+        // Obtener ingredientes del restaurante del plato    
         let { data: ingredientesData, error: ingredientesError } = await supabase
           .from('ingredientes')
           .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id')
@@ -171,7 +188,7 @@ export default function RecetaManager() {
       }
     };
     fetchData();
-  }, [id]);
+  }, [id, isRecetaBaseMode, restauranteId]);
 
   const handleAddIngrediente = async (e) => {
     e.preventDefault();
@@ -186,7 +203,7 @@ export default function RecetaManager() {
         .from('receta_lineas')
         .insert([
           {
-            plato_id: id,
+            receta_id: recetaBase?.id || plato?.receta_id,
             ingrediente_id: selectedIngrediente,
             cantidad: parseFloat(cantidad),
             merma_pct: parseFloat(merma) || 0,
@@ -259,13 +276,13 @@ export default function RecetaManager() {
     if (!nuevoIngNombre.trim()) return;
     setSaving(true);
     try {
-      const restauranteId = plato?.restaurante_id;
-      if (!restauranteId) throw new Error('Restaurante no identificado');
+      const restauranteActual = plato?.restaurante_id || recetaBase?.restaurante_id;
+      if (!restauranteActual) throw new Error('Restaurante no identificado');
 
       const { data: nuevoIng, error } = await supabase
         .from('ingredientes')
         .insert([{
-          restaurante_id: restauranteId,
+          restaurante_id: restauranteActual,
           nombre: nuevoIngNombre.trim(),
           unidad_medida: nuevoIngUnidad,
           precio_actual: parseFloat(nuevoIngPrecioCompra) || 0,
@@ -292,7 +309,11 @@ export default function RecetaManager() {
   };
 
   const handleBack = () => {
-    navigate(`/plato/${id}`);
+    if (isRecetaBaseMode) {
+      navigate('/recetas');
+    } else {
+      navigate(`/plato/${id}`);
+    }
   };
 
   if (loading) {
@@ -336,8 +357,13 @@ export default function RecetaManager() {
             <ArrowLeft className="h-6 w-6" />
           </button>
           <span className="font-bold text-ink text-lg truncate max-w-[60%]">
-            {plato?.nombre || 'Receta'}
+            {recetaBase?.nombre || plato?.nombre || 'Receta'}
           </span>
+          {recetaBase && (
+            <span className="text-xs text-warm-gray">
+              Base: {recetaBase.porciones_base} porc.
+            </span>
+          )}
           <div className="w-10"></div>
         </div>
       </header>
@@ -559,8 +585,11 @@ export default function RecetaManager() {
         )}
 
         {/* Nota informativa */}
-        <div className="mt-4 text-xs text-warm-gray bg-white/50 p-3 rounded-xl border border-warm-gray/10">
-          <p>Los cambios se guardan automáticamente al añadir o eliminar ingredientes. El coste del plato se actualiza en tiempo real en la vista de detalle.</p>
+        <div className="mt-4 text-xs text-warm-gray bg-white/50 p-3 rounded-xl border border-warm-gray/10 space-y-1">
+          <p>Los cambios se guardan automáticamente al añadir o eliminar ingredientes.</p>
+          {!isRecetaBaseMode && plato?.factor_porcion && (
+            <p>El plato aplica un factor de {plato.factor_porcion}x sobre esta receta base. El coste final se ajusta automáticamente.</p>
+          )}
         </div>
       </main>
     </div>

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Store, PlusCircle, BarChart3 } from 'lucide-react';
+import { Home, Store, BarChart3, BookOpen, PlusCircle } from 'lucide-react';
 
 export default function AppLayout({ children }) {
   const navigate = useNavigate();
@@ -9,6 +9,7 @@ export default function AppLayout({ children }) {
     { label: 'Inicio', icon: Home, path: '/dashboard' },
     { label: 'Proveedores', icon: Store, path: '/proveedores' },
     { label: 'Gráficos', icon: BarChart3, path: '/graficos' },
+    { label: 'Recetas', icon: BookOpen, path: '/recetas' },
     { label: 'Ingrediente', icon: PlusCircle, path: '/ingredientes' },
   ];
 

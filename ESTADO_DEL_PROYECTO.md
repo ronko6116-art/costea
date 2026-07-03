@@ -44,6 +44,8 @@
 - **Alertas de margen** computadas localmente desde `vista_coste_platos` (sin tabla alertas en DB)
 - **Inline editing** de precio_venta y margen_objetivo en PlatoDetail
 - **Precio mínimo sugerido** al editar precio_venta (coste_total / (1 - margen_objetivo/100))
+- **Semáforo en dashboard** (verde >70%, amarillo 35-70%, rojo <35%)
+- **Modo Fácil de Merma** en RecetaManager (botones: Sin merma, Media 20%, Alta 40%)
 
 ### Gráficos e histórico
 - **Trigger automático**: al actualizar `precio_actual` en ingredientes, se guarda el precio + fecha en `precios_historicos` vía trigger SQL (columnas: `precio`, `fecha`, `precio_anterior`, `precio_nuevo`)
@@ -160,9 +162,7 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 ## Próximos cambios (acordados)
 
 ### Prioridad 1 — Alto impacto
-1. **Semáforo en dashboard**: círculo verde (>70%), amarillo (35-70%), rojo (<35%) al lado de cada plato, en vez del badge de alerta genérico
-2. **Modo Fácil de Merma**: al añadir ingrediente, 3 botones — [Sin merma] [Media: Verduras/Carnes 20%] [Alta: Pescados/Mariscos 40%]
-3. **Calculador de Menú del Día**: seleccionar 1º plato + 2º plato + postre de los existentes; muestra coste total, precio sugerido y ganancia por cliente
+1. **Calculador de Menú del Día**: seleccionar 1º plato + 2º plato + postre de los existentes; muestra coste total, precio sugerido y ganancia por cliente
 
 ### Prioridad 2 — Medio impacto
 4. **Clonar recetas**: botón para duplicar un plato con todos sus ingredientes (útil para variaciones: ración/media ración)
