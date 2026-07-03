@@ -15,5 +15,8 @@ CREATE TABLE IF NOT EXISTS ventas_diarias (
 CREATE INDEX IF NOT EXISTS idx_ventas_diarias_fecha
   ON ventas_diarias(restaurante_id, fecha DESC);
 
+-- Desactivar RLS (control de acceso via frontend, como el resto de tablas)
+ALTER TABLE ventas_diarias DISABLE ROW LEVEL SECURITY;
+
 -- Dar permisos
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE ventas_diarias TO anon, authenticated;

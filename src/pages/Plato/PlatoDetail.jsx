@@ -188,12 +188,27 @@ export default function PlatoDetail() {
       setProveedores(prev => [...prev, { id: newProv.id, nombre: newProv.nombre }]);
     }
 
+    const nuevoPrecio = parseFloat(editFormData.precio_actual) || 0;
+    const precioAnterior = linea.ingrediente.precio_actual || 0;
+
+    // Insertar en historico primero (bypass del trigger de BD)
+    const restauranteId = plato?.restaurante_id;
+    if (restauranteId) {
+      await supabase.from('precios_historicos').insert({
+        ingrediente_id: linea.ingrediente.id,
+        precio_anterior: precioAnterior,
+        precio_nuevo: nuevoPrecio,
+        restaurante_id: restauranteId,
+        creado_en: now,
+      });
+    }
+
     const { error: ingError } = await supabase
       .from('ingredientes')
       .update({
         nombre: editFormData.nombre,
         unidad_medida: editFormData.unidad_medida,
-        precio_actual: parseFloat(editFormData.precio_actual) || 0,
+        precio_actual: nuevoPrecio,
         categoria: editFormData.categoria || null,
         proveedor_habitual_id: proveedorId || null,
         updated_at: now,
