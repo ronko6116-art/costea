@@ -27,6 +27,7 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
   useEffect(() => {
     if (!restauranteId) return;
     const fetch = async () => {
+      console.log('PrecioEvolucion: ingredienteId=', ingredienteId, 'restauranteId=', restauranteId);
       
       const { data: ing, error: errIng } = await supabase
         .from('ingredientes')
@@ -38,13 +39,18 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
         setIngrediente(ing);
       }
 
+      console.log('PrecioEvolucion: ingrediente restaurante_id=', ing?.restaurante_id, 'fallback restauranteId=', restauranteId);
+
+      const rId = ing?.restaurante_id || restauranteId;
       const { data: hist, error: errHist } = await supabase
         .from('precios_historicos')
         .select('precio, fecha, creado_en')
         .eq('ingrediente_id', ingredienteId)
-        .eq('restaurante_id', ing?.restaurante_id || restauranteId)
+        .eq('restaurante_id', rId)
         .order('fecha', { ascending: true });
       if (errHist) console.error('PrecioEvolucion: error historico', errHist);
+
+      console.log('PrecioEvolucion: hist query restaurante_id=', rId, 'rows=', hist?.length);
 
       if (hist && hist.length > 0) {
         const puntos = hist.map((h) => ({
@@ -53,10 +59,56 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
           ts: h.creado_en,
         }));
         setDatos(puntos);
-      } else {
-        setDatos([]);
+        setLoading(false);
+        return;
       }
 
+      // Fallback: intentar sin filtrar por restaurante (ingredientes viejos sin restaurante_id)
+      if (rId) {
+        console.log('PrecioEvolucion: fallback sin restaurante_id');
+        let histAll, errAll;
+        ({ data: histAll, error: errAll } = await supabase
+          .from('precios_historicos')
+          .select('precio, fecha, creado_en')
+          .eq('ingrediente_id', ingredienteId)
+          .order('fecha', { ascending: true }));
+        if (errAll) console.error('PrecioEvolucion: error historico (fallback)', errAll);
+
+        if (!histAll?.length) {
+          // Fallback 3: columnas alternativas (precio_anterior como precio, creado_en como fecha)
+          console.log('PrecioEvolucion: fallback con columnas alternativas');
+          ({ data: histAll, error: errAll } = await supabase
+            .from('precios_historicos')
+            .select('precio_anterior, creado_en')
+            .eq('ingrediente_id', ingredienteId)
+            .order('creado_en', { ascending: true }));
+          if (errAll) console.error('PrecioEvolucion: error columnas alternativas', errAll);
+
+          if (histAll?.length) {
+            const puntos = histAll.map((h) => ({
+              fecha: format(parseISO(h.creado_en), 'dd MMM', { locale: es }),
+              precio: h.precio_anterior,
+              ts: h.creado_en,
+            }));
+            setDatos(puntos);
+            setLoading(false);
+            return;
+          }
+        }
+
+        if (histAll?.length) {
+          const puntos = histAll.map((h) => ({
+            fecha: format(parseISO(h.fecha), 'dd MMM', { locale: es }),
+            precio: h.precio,
+            ts: h.creado_en,
+          }));
+          setDatos(puntos);
+          setLoading(false);
+          return;
+        }
+      }
+
+      setDatos([]);
       setLoading(false);
     };
     fetch();
