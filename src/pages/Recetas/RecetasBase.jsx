@@ -6,6 +6,7 @@ import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Plus, BookOpen, Loader2, Edit3, Trash2, Check, X } from 'lucide-react';
 import { formatearMoneda } from '../../functions/formatters';
 import { CATEGORIAS } from '../../utils/categorias';
+import PickerList from '../../components/PickerList';
 
 function RecetaCard({ receta, onRecetaChange }) {
   const { restauranteId } = useRestaurant();
@@ -26,7 +27,6 @@ function RecetaCard({ receta, onRecetaChange }) {
   const [editandoLineaId, setEditandoLineaId] = useState(null);
   const [editCantidad, setEditCantidad] = useState('');
   const [editMerma, setEditMerma] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadIng();
@@ -272,54 +272,35 @@ function RecetaCard({ receta, onRecetaChange }) {
                   </div>
                 ) : (
                   <>
-                    <div className="space-y-1">
-                      <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        placeholder="Buscar ingrediente..."
-                        className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none"
-                      />
-                      {disponibles.length === 0 ? (
-                        <p className="text-sm text-warm-gray py-2 text-center">No hay ingredientes disponibles</p>
-                      ) : (
-                        <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-warm-gray/10 p-1 bg-white">
-                          {disponibles
-                            .filter(i => !searchTerm || i.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
-                            .map(i => (
-                              <button
-                                key={i.id}
-                                type="button"
-                                onClick={() => { setSelectedIng(i.id); setSearchTerm(''); }}
-                                className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
-                                  selectedIng === i.id
-                                    ? 'border-olive bg-olive/5 ring-1 ring-olive'
-                                    : 'border-transparent hover:border-warm-gray/20 hover:bg-warm-gray/5'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="min-w-0 flex-1">
-                                    <span className="font-medium text-ink truncate block">{i.nombre}</span>
-                                    {i.proveedor_habitual?.nombre && (
-                                      <span className="text-xs text-warm-gray truncate block">{i.proveedor_habitual.nombre}</span>
-                                    )}
-                                  </div>
-                                  <span className="text-xs text-ink-soft whitespace-nowrap tabular-nums">
-                                    {formatearMoneda(i.precio_actual)}/{i.unidad_medida === 'docena' ? 'doc' : i.unidad_medida}
-                                  </span>
-                                </div>
-                              </button>
-                            ))}
-                          <button
-                            type="button"
-                            onClick={() => setCreandoIng(true)}
-                            className="w-full text-left px-3 py-2 rounded-lg border border-dashed border-terracotta/30 text-terracotta font-semibold text-sm hover:bg-terracotta/5 transition-colors"
-                          >
-                            + Crear nuevo ingrediente
-                          </button>
+                    <PickerList
+                      items={disponibles}
+                      value={selectedIng}
+                      onChange={setSelectedIng}
+                      placeholder="Buscar ingrediente..."
+                      emptyMessage="No hay ingredientes disponibles"
+                      renderItem={i => (
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <span className="font-medium text-ink truncate block">{i.nombre}</span>
+                            {i.proveedor_habitual?.nombre && (
+                              <span className="text-xs text-warm-gray truncate block">{i.proveedor_habitual.nombre}</span>
+                            )}
+                          </div>
+                          <span className="text-xs text-ink-soft whitespace-nowrap tabular-nums">
+                            {formatearMoneda(i.precio_actual)}/{i.unidad_medida === 'docena' ? 'doc' : i.unidad_medida}
+                          </span>
                         </div>
                       )}
-                    </div>
+                      footer={
+                        <button
+                          type="button"
+                          onClick={() => setCreandoIng(true)}
+                          className="w-full text-left px-3 py-2 rounded-lg border border-dashed border-terracotta/30 text-terracotta font-semibold text-sm hover:bg-terracotta/5 transition-colors"
+                        >
+                          + Crear nuevo ingrediente
+                        </button>
+                      }
+                    />
                     <div className="flex gap-2">
                       <input type="number" step="0.001" min="0.001" value={cantidad} onChange={e => setCantidad(e.target.value)} placeholder="Cantidad" className="flex-1 rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white" required />
                       {[

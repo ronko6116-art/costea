@@ -5,6 +5,7 @@ import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Save, Trash2, Info } from 'lucide-react';
 import { formatearMoneda } from '../../functions/formatters';
+import PickerList from '../../components/PickerList';
 
 const FACTORES = [
   { value: '0.25', label: 'Tapa (0.25x)' },
@@ -230,25 +231,19 @@ export default function PlatoForm() {
             <label className="block text-sm font-medium text-ink mb-1">
               Receta base *
             </label>
-            <select
-              name="receta_id"
+            <PickerList
+              items={recetasBase}
               value={formData.receta_id}
-              onChange={e => handleRecetaChange(e.target.value)}
-              required
-              className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-            >
-              <option value="">Selecciona una receta...</option>
-              {recetasBase.map(rb => (
-                <option key={rb.id} value={rb.id}>
-                  {rb.nombre} ({rb.porciones_base} porc.)
-                </option>
-              ))}
-            </select>
-            {recetasBase.length === 0 && (
-              <p className="text-xs text-warm-gray mt-1">
-                No hay recetas. Crea una desde la sección Recetas primero.
-              </p>
-            )}
+              onChange={handleRecetaChange}
+              placeholder="Buscar receta..."
+              emptyMessage="No hay recetas. Créalas desde la sección Recetas."
+              renderItem={rb => (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-ink truncate">{rb.nombre}</span>
+                  <span className="text-xs text-warm-gray whitespace-nowrap">{rb.porciones_base} porc.</span>
+                </div>
+              )}
+            />
           </div>
 
           <div>
