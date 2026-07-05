@@ -2,9 +2,18 @@
 import { TrendingDown, TrendingUp, ChevronRight, AlertTriangle } from 'lucide-react';
 import { formatearMoneda } from '../functions/formatters';
 
+const FACTOR_LABELS = {
+  '0.25': 'Tapa',
+  '0.5': 'Media ración',
+  '1': 'Ración',
+  '2': 'Doble ración',
+};
+
 export default function PlatoCard({ plato, onPress }) {
   const margenBajo = plato.margen_pct < 50;
   const margenCritico = plato.margen_pct < 35;
+
+  const factorLabel = FACTOR_LABELS[plato.factor_porcion] || (plato.factor_porcion ? `${plato.factor_porcion}x` : null);
 
   const semaforoColor =
     plato.margen_pct > 70
@@ -23,6 +32,11 @@ export default function PlatoCard({ plato, onPress }) {
           <div className="flex-1">
             <h3 className="font-bold text-ink text-base leading-tight">
               {plato.plato_nombre}
+              {factorLabel && (
+                <span className="font-normal text-warm-gray text-sm ml-1">
+                  ({factorLabel})
+                </span>
+              )}
             </h3>
             {plato.categoria && (
               <span className="text-xs text-warm-gray uppercase tracking-wide">
