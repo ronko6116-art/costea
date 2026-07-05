@@ -36,10 +36,15 @@ export default function AppLayout({ children }) {
             <button
               key={item.label}
               onClick={() => handleNavClick(item)}
-              className={`flex flex-col items-center relative ${active ? 'text-terracotta' : 'text-warm-gray'}`}
+              className={`flex flex-col items-center relative px-3 py-1 rounded-xl transition-colors ${
+                active ? 'text-terracotta bg-terracotta/10' : 'text-warm-gray hover:text-ink/60'
+              }`}
             >
-              <Icon className="h-6 w-6" />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <Icon className={`h-6 w-6 ${active ? 'drop-shadow-sm' : ''}`} />
+              <span className={`text-[10px] mt-0.5 ${active ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
+              {active && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-terracotta" />
+              )}
             </button>
           );
         })}

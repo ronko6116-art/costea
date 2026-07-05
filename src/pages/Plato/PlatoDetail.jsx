@@ -6,12 +6,10 @@ import {
   ArrowLeft, 
   TrendingDown, 
   TrendingUp, 
-  AlertTriangle, 
-  Info,
+  AlertTriangle,
   Plus,
-  X,
   Check,
-  Loader2,
+  X,
   Edit3,
   Trash2
 } from 'lucide-react';
@@ -32,23 +30,8 @@ export default function PlatoDetail() {
   const [editandoMargenObj, setEditandoMargenObj] = useState(false);
   const [tempMargenObj, setTempMargenObj] = useState('');
 
-  // Modal state
-  const [ingredienteEditando, setIngredienteEditando] = useState(null);
+  // Proveedores y categorías para navegación
   const [proveedores, setProveedores] = useState([]);
-  const [categorias, setCategorias] = useState([]);
-  const [mostrarNuevaCategoria, setMostrarNuevaCategoria] = useState(false);
-  const [mostrarNuevoProveedor, setMostrarNuevoProveedor] = useState(false);
-  const [savingIngrediente, setSavingIngrediente] = useState(false);
-  const [editFormData, setEditFormData] = useState({
-    nombre: '',
-    unidad_medida: 'kg',
-    precio_actual: '',
-    categoria: '',
-    proveedor_habitual_id: '',
-    nuevoProveedorNombre: '',
-    cantidad: '',
-    merma: '0',
-  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -107,22 +90,12 @@ export default function PlatoDetail() {
           setIngredientes(lineasConCoste);
         }
 
-        // Fetch all suppliers and categories (global, not per restaurant)
+        // Fetch all suppliers for navigation
         const { data: provData } = await supabase
           .from('proveedores')
           .select('id, nombre')
           .order('nombre');
         if (provData) setProveedores(provData);
-
-        const { data: catData } = await supabase
-          .from('ingredientes')
-          .select('categoria')
-          .not('categoria', 'is', null)
-          .order('categoria');
-        if (catData) {
-          const unicas = [...new Set(catData.map(c => c.categoria).filter(Boolean))];
-          setCategorias(unicas);
-        }
 
         setLoading(false);
       } catch (err) {
@@ -133,153 +106,6 @@ export default function PlatoDetail() {
 
     fetchData();
   }, [id, session]);
-
-  const abrirModal = (linea) => {
-    setEditFormData({
-      nombre: linea.ingrediente.nombre || '',
-      unidad_medida: linea.ingrediente.unidad_medida || 'kg',
-      precio_actual: linea.ingrediente.precio_actual || '',
-      categoria: linea.ingrediente.categoria || '',
-      proveedor_habitual_id: linea.ingrediente.proveedor_habitual_id || '',
-      nuevoProveedorNombre: '',
-      cantidad: linea.cantidad || '',
-      merma: linea.merma_pct || '0',
-    });
-    setMostrarNuevaCategoria(false);
-    setMostrarNuevoProveedor(false);
-    setIngredienteEditando(linea);
-  };
-
-  const cerrarModal = () => {
-    setIngredienteEditando(null);
-    setMostrarNuevaCategoria(false);
-    setMostrarNuevoProveedor(false);
-  };
-
-  const handleEditChange = (field, value) => {
-    setEditFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleGuardarIngrediente = async () => {
-    const linea = ingredienteEditando;
-    if (!linea) return;
-
-    setSavingIngrediente(true);
-
-    const now = new Date().toISOString();
-
-    let proveedorId = editFormData.proveedor_habitual_id;
-
-    // Si es un nuevo proveedor, crearlo primero
-    if (editFormData.proveedor_habitual_id === '__nuevo__' && editFormData.nuevoProveedorNombre?.trim()) {
-      const { data: newProv, error: provError } = await supabase
-        .from('proveedores')
-        .insert([{ restaurante_id: plato.restaurante_id, nombre: editFormData.nuevoProveedorNombre.trim() }])
-        .select()
-        .single();
-      if (provError) {
-        alert('Error al crear proveedor: ' + provError.message);
-        setSavingIngrediente(false);
-        return;
-      }
-      proveedorId = newProv.id;
-      setProveedores(prev => [...prev, { id: newProv.id, nombre: newProv.nombre }]);
-    }
-
-    const nuevoPrecio = parseFloat(editFormData.precio_actual) || 0;
-    const precioAnterior = linea.ingrediente.precio_actual || 0;
-
-    // Insertar en historico primero (bypass del trigger de BD)
-    const restauranteId = plato?.restaurante_id;
-    if (restauranteId) {
-      await supabase.from('precios_historicos').insert({
-        ingrediente_id: linea.ingrediente.id,
-        precio_anterior: precioAnterior,
-        precio_nuevo: nuevoPrecio,
-        restaurante_id: restauranteId,
-        creado_en: now,
-      });
-    }
-
-    const { error: ingError } = await supabase
-      .from('ingredientes')
-      .update({
-        nombre: editFormData.nombre,
-        unidad_medida: editFormData.unidad_medida,
-        precio_actual: nuevoPrecio,
-        categoria: editFormData.categoria || null,
-        proveedor_habitual_id: proveedorId || null,
-        updated_at: now,
-      })
-      .eq('id', linea.ingrediente.id);
-
-    if (ingError) {
-      alert('Error al guardar ingrediente: ' + ingError.message);
-      setSavingIngrediente(false);
-      return;
-    }
-
-    const { error: recError } = await supabase
-      .from('receta_lineas')
-      .update({
-        cantidad: parseFloat(editFormData.cantidad) || 0,
-        merma_pct: parseFloat(editFormData.merma) || 0,
-      })
-      .eq('id', linea.id);
-
-    if (recError) {
-      alert('Error al guardar receta: ' + recError.message);
-      setSavingIngrediente(false);
-      return;
-    }
-
-    // Update local state
-    const precioUnitario = parseFloat(editFormData.precio_actual) || 0;
-    const cantidad = parseFloat(editFormData.cantidad) || 0;
-    const merma = parseFloat(editFormData.merma) || 0;
-    const cantidadConMerma = cantidad * (1 + merma / 100);
-    const costeLinea = precioUnitario * cantidadConMerma;
-
-    let nuevoCoste = 0;
-    const ingredientesActualizados = ingredientes.map(item => {
-      if (item.id === linea.id) {
-        const actualizado = {
-          ...item,
-          cantidad,
-          merma_pct: merma,
-          cantidadConMerma,
-          costeLinea,
-          precioUnitario,
-          ingrediente: {
-            ...item.ingrediente,
-            nombre: editFormData.nombre,
-            unidad_medida: editFormData.unidad_medida,
-            precio_actual: precioUnitario,
-            categoria: editFormData.categoria || null,
-            proveedor_habitual_id: proveedorId || null,
-          },
-        };
-        nuevoCoste += costeLinea;
-        return actualizado;
-      }
-      nuevoCoste += item.costeLinea;
-      return item;
-    });
-
-    const nuevoMargen = plato.precio_venta > 0
-      ? parseFloat(((plato.precio_venta - nuevoCoste) / plato.precio_venta * 100).toFixed(2))
-      : 0;
-
-    setIngredientes(ingredientesActualizados);
-    setPlato(prev => ({
-      ...prev,
-      coste_total: nuevoCoste,
-      margen_pct: nuevoMargen,
-    }));
-
-    cerrarModal();
-    setSavingIngrediente(false);
-  };
 
   const handleGuardarPlatoField = async (field, value) => {
     const now = new Date().toISOString();
@@ -431,10 +257,10 @@ export default function PlatoDetail() {
               {!editandoPrecioVenta ? (
                 <button
                   onClick={() => { setTempPrecioVenta(plato.precio_venta); setEditandoPrecioVenta(true); }}
-                  className="font-bold text-ink text-lg inline-flex items-center gap-1.5 bg-warm-gray/5 rounded-lg px-2 py-1 active:bg-warm-gray/10 transition-colors"
+                  className="font-bold text-ink text-lg inline-flex items-center gap-1.5 bg-terracotta/10 rounded-lg px-3 py-1.5 active:bg-terracotta/20 transition-colors border border-dashed border-terracotta/30"
                 >
                   {formatearMoneda(plato.precio_venta)}
-                  <Edit3 className="h-3.5 w-3.5 text-warm-gray" />
+                  <Edit3 className="h-3.5 w-3.5 text-terracotta" />
                 </button>
               ) : (
                 <p className="font-bold text-ink text-lg opacity-60">
@@ -483,15 +309,15 @@ export default function PlatoDetail() {
                 Editar precio de venta
               </p>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-2 bg-white rounded-lg p-1.5 border border-warm-gray/10 shadow-sm">
-                  <span className="text-sm text-warm-gray shrink-0">€</span>
+                <div className="flex items-center gap-2 bg-olive/5 rounded-lg p-2 border-2 border-olive/30 shadow-sm">
+                  <span className="text-sm font-semibold text-ink shrink-0">€</span>
                   <input
                     type="number"
                     step="0.01"
                     min="0"
                     value={tempPrecioVenta}
                     onChange={e => setTempPrecioVenta(e.target.value)}
-                    className="w-24 rounded-lg border border-terracotta/50 px-3 py-2 text-sm bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                    className="w-24 rounded-lg border-2 border-olive/40 px-3 py-2 text-sm bg-white font-semibold focus:border-olive focus:ring-2 focus:ring-olive/20 outline-none transition"
                     autoFocus
                     onKeyDown={e => {
                       if (e.key === 'Enter') handleGuardarPlatoField('precio_venta', tempPrecioVenta);
@@ -500,13 +326,15 @@ export default function PlatoDetail() {
                   />
                   <button
                     onClick={() => handleGuardarPlatoField('precio_venta', tempPrecioVenta)}
-                    className="p-2 rounded-full bg-olive text-white shrink-0"
+                    className="p-2 rounded-full bg-olive text-white shrink-0 hover:bg-olive-dark transition-colors"
+                    title="Guardar"
                   >
                     <Check className="h-5 w-5" />
                   </button>
                   <button
                     onClick={() => setEditandoPrecioVenta(false)}
-                    className="p-2 rounded-full bg-white border border-warm-gray/20 text-warm-gray shrink-0"
+                    className="p-2 rounded-full bg-white border-2 border-warm-gray/20 text-warm-gray shrink-0 hover:bg-warm-gray/5 transition-colors"
+                    title="Cancelar"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -535,7 +363,7 @@ export default function PlatoDetail() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-ink-soft">Margen objetivo</span>
                 {editandoMargenObj ? (
-                  <div className="flex items-center gap-2 bg-white rounded-lg p-1.5 border border-warm-gray/10 shadow-sm">
+                  <div className="flex items-center gap-2 bg-olive/5 rounded-lg p-2 border-2 border-olive/30 shadow-sm">
                     <input
                       type="number"
                       step="0.5"
@@ -543,23 +371,25 @@ export default function PlatoDetail() {
                       max="100"
                       value={tempMargenObj}
                       onChange={e => setTempMargenObj(e.target.value)}
-                      className="w-16 rounded-lg border border-terracotta/50 px-2 py-2 text-sm bg-white text-right focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+                      className="w-16 rounded-lg border-2 border-olive/40 px-2 py-2 text-sm bg-white text-right font-semibold focus:border-olive focus:ring-2 focus:ring-olive/20 outline-none transition"
                       autoFocus
                       onKeyDown={e => {
                         if (e.key === 'Enter') handleGuardarPlatoField('margen_objetivo', tempMargenObj);
                         if (e.key === 'Escape') setEditandoMargenObj(false);
                       }}
                     />
-                    <span className="text-sm text-warm-gray shrink-0">%</span>
+                    <span className="text-sm font-semibold text-ink shrink-0">%</span>
                     <button
                       onClick={() => handleGuardarPlatoField('margen_objetivo', tempMargenObj)}
-                      className="p-2 rounded-full bg-olive text-white shrink-0"
+                      className="p-2 rounded-full bg-olive text-white shrink-0 hover:bg-olive-dark transition-colors"
+                      title="Guardar"
                     >
                       <Check className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => setEditandoMargenObj(false)}
-                      className="p-2 rounded-full bg-white border border-warm-gray/20 text-warm-gray shrink-0"
+                      className="p-2 rounded-full bg-white border-2 border-warm-gray/20 text-warm-gray shrink-0 hover:bg-warm-gray/5 transition-colors"
+                      title="Cancelar"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -567,10 +397,10 @@ export default function PlatoDetail() {
                 ) : (
                   <button
                     onClick={() => { setTempMargenObj(plato.margen_objetivo); setEditandoMargenObj(true); }}
-                    className="font-medium text-ink inline-flex items-center gap-1 bg-warm-gray/5 rounded-lg px-2 py-1 active:bg-warm-gray/10 transition-colors"
+                    className="font-medium text-ink inline-flex items-center gap-1 bg-terracotta/10 rounded-lg px-3 py-1.5 active:bg-terracotta/20 transition-colors border border-dashed border-terracotta/30"
                   >
                     {plato.margen_objetivo}%
-                    <Edit3 className="h-3 w-3 text-warm-gray" />
+                    <Edit3 className="h-3 w-3 text-terracotta" />
                   </button>
                 )}
               </div>
@@ -630,8 +460,7 @@ export default function PlatoDetail() {
               {ingredientes.map((linea) => (
                 <div
                   key={linea.id}
-                  className="px-5 py-3 cursor-pointer hover:bg-cream/50 transition-colors group"
-                  onClick={() => abrirModal(linea)}
+                  className="px-5 py-3"
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
@@ -642,7 +471,6 @@ export default function PlatoDetail() {
                         <p className="font-medium text-ink">
                           {linea.ingrediente?.nombre || 'Ingrediente desconocido'}
                         </p>
-                        <Edit3 className="h-3 w-3 text-warm-gray opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                       <div className="flex flex-wrap gap-2 text-xs text-warm-gray mt-0.5">
                         <span>
@@ -680,241 +508,7 @@ export default function PlatoDetail() {
           </div>
         </div>
 
-        <div className="mt-4 flex items-start gap-2 text-xs text-warm-gray bg-white/50 p-3 rounded-xl border border-warm-gray/10">
-          <Info className="h-4 w-4 shrink-0 mt-0.5" />
-          <p>
-            Toca cualquier ingrediente para editarlo. El coste y margen se recalculan automáticamente.
-          </p>
-        </div>
       </main>
-
-      {/* Modal de edición de ingrediente */}
-      {ingredienteEditando && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-          onClick={cerrarModal}
-        >
-          <div className="fixed inset-0 bg-black/40 transition-opacity" />
-          <div
-            className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl p-5 sm:p-6 animate-slide-up"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2">
-                <Edit3 className="h-5 w-5 text-terracotta" />
-                <span className="font-semibold text-ink">Editar ingrediente</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {ingredienteEditando?.ingrediente?.id && (
-                  <button
-                    onClick={() => navigate(`/graficos?ingrediente=${ingredienteEditando.ingrediente.id}`)}
-                    className="text-sm text-terracotta font-medium hover:underline"
-                  >
-                    Ver gráfico
-                  </button>
-                )}
-                <button
-                  onClick={cerrarModal}
-                  className="p-2 -mr-2 rounded-full hover:bg-warm-gray/10 transition-colors"
-                >
-                  <X className="h-5 w-5 text-warm-gray" />
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {/* Nombre */}
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">Nombre</label>
-                <input
-                  type="text"
-                  value={editFormData.nombre}
-                  onChange={e => handleEditChange('nombre', e.target.value)}
-                  className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                />
-              </div>
-
-              {/* Unidad de medida */}
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">Unidad de medida</label>
-                <select
-                  value={editFormData.unidad_medida}
-                  onChange={e => handleEditChange('unidad_medida', e.target.value)}
-                  className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                >
-                  <option value="kg">kg</option>
-                  <option value="g">g</option>
-                  <option value="l">l</option>
-                  <option value="ml">ml</option>
-                  <option value="unidad">unidad</option>
-                  <option value="docena">docena</option>
-                </select>
-              </div>
-
-              {/* Precio actual */}
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">Precio actual (€)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={editFormData.precio_actual}
-                  onChange={e => handleEditChange('precio_actual', e.target.value)}
-                  className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                />
-              </div>
-
-              {/* Categoría */}
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">Categoría</label>
-                {mostrarNuevaCategoria ? (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={editFormData.categoria}
-                      onChange={e => handleEditChange('categoria', e.target.value)}
-                      className="flex-1 rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                      placeholder="Nueva categoría..."
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={() => { setMostrarNuevaCategoria(false); setEditFormData(prev => ({ ...prev, categoria: '' })); }}
-                      className="text-sm text-warm-gray hover:text-ink px-2"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                ) : (
-                  <select
-                    value={editFormData.categoria}
-                    onChange={e => {
-                      if (e.target.value === '__nueva__') {
-                        setMostrarNuevaCategoria(true);
-                        setEditFormData(prev => ({ ...prev, categoria: '' }));
-                      } else {
-                        handleEditChange('categoria', e.target.value);
-                      }
-                    }}
-                    className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                  >
-                    <option value="">Sin categoría</option>
-                    {categorias.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                    <option value="__nueva__">+ Crear nueva...</option>
-                  </select>
-                )}
-              </div>
-
-              {/* Proveedor */}
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">Proveedor</label>
-                {mostrarNuevoProveedor ? (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={editFormData.nuevoProveedorNombre}
-                      onChange={e => handleEditChange('nuevoProveedorNombre', e.target.value)}
-                      className="flex-1 rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                      placeholder="Nombre del nuevo proveedor..."
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={() => { setMostrarNuevoProveedor(false); setEditFormData(prev => ({ ...prev, proveedor_habitual_id: '', nuevoProveedorNombre: '' })); }}
-                      className="text-sm text-warm-gray hover:text-ink px-2"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                ) : (
-                  <select
-                    value={editFormData.proveedor_habitual_id}
-                    onChange={e => {
-                      if (e.target.value === '__nuevo__') {
-                        setMostrarNuevoProveedor(true);
-                        setEditFormData(prev => ({ ...prev, proveedor_habitual_id: '__nuevo__' }));
-                      } else {
-                        handleEditChange('proveedor_habitual_id', e.target.value);
-                      }
-                    }}
-                    className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                  >
-                    <option value="">Ninguno</option>
-                    {proveedores.map(p => (
-                      <option key={p.id} value={p.id}>{p.nombre}</option>
-                    ))}
-                    <option value="__nuevo__">+ Crear nuevo...</option>
-                  </select>
-                )}
-              </div>
-
-              {/* Separador */}
-              <div className="border-t border-warm-gray/10 pt-4">
-                <p className="text-xs font-semibold text-warm-gray uppercase tracking-wide mb-3">
-                  Receta
-                </p>
-
-                {/* Cantidad */}
-                <div>
-                  <label className="block text-sm font-medium text-ink mb-1">
-                    Cantidad ({editFormData.unidad_medida})
-                  </label>
-                  <input
-                    type="number"
-                    step="0.001"
-                    min="0"
-                    value={editFormData.cantidad}
-                    onChange={e => handleEditChange('cantidad', e.target.value)}
-                    className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                  />
-                </div>
-
-                {/* Merma */}
-                <div className="mt-3">
-                  <label className="block text-sm font-medium text-ink mb-1">
-                    Merma (%)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="100"
-                    value={editFormData.merma}
-                    onChange={e => handleEditChange('merma', e.target.value)}
-                    className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-                  />
-                  <p className="text-xs text-warm-gray mt-1">
-                    Porcentaje de desperdicio al preparar el ingrediente.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={handleGuardarIngrediente}
-                disabled={savingIngrediente}
-                className="flex-1 flex items-center justify-center gap-2 bg-olive text-white rounded-full py-3 font-semibold hover:bg-olive-dark transition-colors disabled:opacity-60"
-              >
-                {savingIngrediente ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Check className="h-5 w-5" />
-                )}
-                {savingIngrediente ? 'Guardando...' : 'Guardar'}
-              </button>
-              <button
-                onClick={cerrarModal}
-                className="flex-1 border border-warm-gray/30 text-ink-soft rounded-full py-3 font-medium hover:bg-warm-gray/5 transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
