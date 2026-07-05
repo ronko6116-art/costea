@@ -124,6 +124,7 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 | `018_trigger_insert_ingredientes.sql` | Trigger dispara en INSERT+UPDATE de precio_actual; backfill de históricos; grant SELECT ingredientes | ✅ Aplicada vía API |
 | `019_add_fecha_compra.sql` | Añade columna `fecha_compra DATE` a ingredientes | ✅ Aplicada vía API |
 | `020_enable_rls_all_tables.sql` | Activa RLS en todas las tablas restantes (precios_historicos, precios_proveedor, receta_lineas, recetas_base, ventas_diarias). Políticas consistentes: `restaurante_id IN (SELECT id FROM restaurantes WHERE owner_id = auth.uid())`. Trigger SECURITY DEFINER para bypass de RLS. Revoca permisos excesivos de anon. | ✅ Aplicada vía API |
+| `021_fix_vista_costes_docena.sql` | Añade factor `1/12` a `vista_coste_platos` cuando `unidad_medida = 'docena'`, para que cantidad en unidades se convierta correctamente a docenas en el cálculo de coste total y margen. | ✅ Aplicada vía API |
 | `999_mock_historicos.sql` | Genera datos mock de histórico de precios para pruebas | ⚠️ Sólo tests |
 
 ---
@@ -177,6 +178,7 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 | **Ingredientes sin campo fecha de compra** | Migración 019 añade `fecha_compra DATE`; formulario incluye input tipo date |
 | **Al cambiar fecha de compra, sin distinción entre compra actual o pasada** | Modal que pregunta al usuario: "Compra actual" (actualiza precio) o "Compra pasada" (solo histórico) |
 | **RLS desactivado en precios_historicos, precios_proveedor, receta_lineas, recetas_base, ventas_diarias** | Migración 020 activa RLS con políticas owner-based en todas las tablas; trigger function marcada SECURITY DEFINER para insertar en histórico sin fricción; permisos de anon revocados en tablas sensibles |
+| **vista_coste_platos no consideraba docenas** | Migración 021 añade factor 1/12 en el SQL de la vista cuando unidad_medida = 'docena'. El Dashboard y el coste total de PlatoDetail ahora calculan correctamente |
 
 ---
 
@@ -289,7 +291,8 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 │       ├── 017_vista_porciones_base.sql
 │       ├── 018_trigger_insert_ingredientes.sql  # Trigger INSERT+UPDATE + backfill
 │       ├── 019_add_fecha_compra.sql             # Columna fecha_compra en ingredientes
-│       └── 020_enable_rls_all_tables.sql        # RLS en todas las tablas + trigger SECURITY DEFINER
+│       ├── 020_enable_rls_all_tables.sql        # RLS en todas las tablas + trigger SECURITY DEFINER
+│       └── 021_fix_vista_costes_docena.sql     # Factor docena en vista_coste_platos
 ├── index.html                       # Meta tags PWA + apple-touch-icon
 ├── .env                             # Variables públicas (Supabase, Turnstile)
 ├── .env.local                       # Desarrollo local (no versionado)
