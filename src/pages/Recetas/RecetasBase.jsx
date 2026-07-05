@@ -26,6 +26,7 @@ function RecetaCard({ receta, onRecetaChange }) {
   const [editandoLineaId, setEditandoLineaId] = useState(null);
   const [editCantidad, setEditCantidad] = useState('');
   const [editMerma, setEditMerma] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadIng();
@@ -36,20 +37,20 @@ function RecetaCard({ receta, onRecetaChange }) {
     try {
       const { data: l } = await supabase
         .from('receta_lineas')
-        .select(`id, cantidad, merma_pct, ingrediente:ingredientes(id, nombre, unidad_medida, precio_actual, proveedor_habitual_id)`)
+        .select(`id, cantidad, merma_pct, ingrediente:ingredientes(id, nombre, unidad_medida, precio_actual, proveedor_habitual_id, proveedor_habitual:proveedores(nombre))`)
         .eq('receta_id', receta.id);
       setLineas(l || []);
 
       let { data: ing } = await supabase
         .from('ingredientes')
-        .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id')
+        .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id, proveedor_habitual:proveedores(nombre)')
         .eq('restaurante_id', receta.restaurante_id)
         .order('nombre');
 
       if (!ing?.length && restauranteId) {
         const { data: fb } = await supabase
           .from('ingredientes')
-          .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id')
+          .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id, proveedor_habitual:proveedores(nombre)')
           .eq('restaurante_id', restauranteId)
           .order('nombre');
         if (fb?.length) ing = fb;
@@ -57,7 +58,7 @@ function RecetaCard({ receta, onRecetaChange }) {
       if (!ing?.length) {
         const { data: all } = await supabase
           .from('ingredientes')
-          .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id')
+          .select('id, nombre, unidad_medida, precio_actual, proveedor_habitual_id, proveedor_habitual:proveedores(nombre)')
           .order('nombre');
         if (all?.length) ing = all;
       }
@@ -136,7 +137,7 @@ function RecetaCard({ receta, onRecetaChange }) {
       await supabase.from('receta_lineas').delete().eq('id', lineaId);
       setLineas(lineas.filter(l => l.id !== lineaId));
       if (removed) {
-        setDisponibles([...disponibles, { id: removed.ingrediente.id, nombre: removed.ingrediente.nombre, unidad_medida: removed.ingrediente.unidad_medida, precio_actual: removed.ingrediente.precio_actual, proveedor_habitual_id: removed.ingrediente.proveedor_habitual_id }]);
+        setDisponibles([...disponibles, { id: removed.ingrediente.id, nombre: removed.ingrediente.nombre, unidad_medida: removed.ingrediente.unidad_medida, precio_actual: removed.ingrediente.precio_actual, proveedor_habitual_id: removed.ingrediente.proveedor_habitual_id, proveedor_habitual: removed.ingrediente.proveedor_habitual }]);
       }
       onRecetaChange();
     } catch (err) {
@@ -198,7 +199,7 @@ function RecetaCard({ receta, onRecetaChange }) {
                             onChange={e => setEditCantidad(e.target.value)}
                             className="w-20 rounded-lg border border-terracotta/30 px-2 py-2 text-sm bg-white font-medium"
                           />
-                          <span className="text-xs text-warm-gray font-medium">{l.ingrediente.unidad_medida}</span>
+                          <span className="text-xs text-warm-gray font-medium">{l.ingrediente.unidad_medida === 'docena' ? 'uds' : l.ingrediente.unidad_medida}</span>
                           <select
                             value={editMerma}
                             onChange={e => setEditMerma(e.target.value)}
@@ -225,9 +226,9 @@ function RecetaCard({ receta, onRecetaChange }) {
                         <div className="flex-1">
                           <p className="text-sm font-medium text-ink">{l.ingrediente.nombre}</p>
                           <p className="text-xs text-warm-gray">
-                            {l.cantidad} {l.ingrediente.unidad_medida}
+                            {l.cantidad} {l.ingrediente.unidad_medida === 'docena' ? 'uds' : l.ingrediente.unidad_medida}
                             {l.merma_pct > 0 && <span className="text-orange-500 ml-1">merma {l.merma_pct}%</span>}
-                            <span className="ml-1">· {formatearMoneda(l.ingrediente.precio_actual)}/{l.ingrediente.unidad_medida}</span>
+                            <span className="ml-1">· {formatearMoneda(l.ingrediente.precio_actual)}/{l.ingrediente.unidad_medida === 'docena' ? 'doc' : l.ingrediente.unidad_medida}</span>
                           </p>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
@@ -271,12 +272,54 @@ function RecetaCard({ receta, onRecetaChange }) {
                   </div>
                 ) : (
                   <>
-                    <select value={selectedIng} onChange={e => { if (e.target.value === '__nuevo__') setCreandoIng(true); else setSelectedIng(e.target.value); }} className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white" required>
-                      <option value="">Selecciona...</option>
-                      {disponibles.map(i => <option key={i.id} value={i.id}>{i.nombre}</option>)}
-                      {disponibles.length === 0 && <option disabled>No hay ingredientes disponibles</option>}
-                      <option value="__nuevo__" className="text-terracotta font-semibold">+ Crear nuevo...</option>
-                    </select>
+                    <div className="space-y-1">
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        placeholder="Buscar ingrediente..."
+                        className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none"
+                      />
+                      {disponibles.length === 0 ? (
+                        <p className="text-sm text-warm-gray py-2 text-center">No hay ingredientes disponibles</p>
+                      ) : (
+                        <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-warm-gray/10 p-1 bg-white">
+                          {disponibles
+                            .filter(i => !searchTerm || i.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
+                            .map(i => (
+                              <button
+                                key={i.id}
+                                type="button"
+                                onClick={() => { setSelectedIng(i.id); setSearchTerm(''); }}
+                                className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
+                                  selectedIng === i.id
+                                    ? 'border-olive bg-olive/5 ring-1 ring-olive'
+                                    : 'border-transparent hover:border-warm-gray/20 hover:bg-warm-gray/5'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="min-w-0 flex-1">
+                                    <span className="font-medium text-ink truncate block">{i.nombre}</span>
+                                    {i.proveedor_habitual?.nombre && (
+                                      <span className="text-xs text-warm-gray truncate block">{i.proveedor_habitual.nombre}</span>
+                                    )}
+                                  </div>
+                                  <span className="text-xs text-ink-soft whitespace-nowrap tabular-nums">
+                                    {formatearMoneda(i.precio_actual)}/{i.unidad_medida === 'docena' ? 'doc' : i.unidad_medida}
+                                  </span>
+                                </div>
+                              </button>
+                            ))}
+                          <button
+                            type="button"
+                            onClick={() => setCreandoIng(true)}
+                            className="w-full text-left px-3 py-2 rounded-lg border border-dashed border-terracotta/30 text-terracotta font-semibold text-sm hover:bg-terracotta/5 transition-colors"
+                          >
+                            + Crear nuevo ingrediente
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex gap-2">
                       <input type="number" step="0.001" min="0.001" value={cantidad} onChange={e => setCantidad(e.target.value)} placeholder="Cantidad" className="flex-1 rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white" required />
                       {[

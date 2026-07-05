@@ -78,7 +78,8 @@ export default function PlatoDetail() {
             if (!ingrediente) return null;
             const precioUnitario = ingrediente.precio_actual || 0;
             const cantidadConMerma = linea.cantidad * (1 + (linea.merma_pct || 0) / 100);
-            const costeLinea = precioUnitario * cantidadConMerma / (platoData.porciones_base || 1) * (platoData.factor_porcion || 1);
+            const factorUnidad = ingrediente.unidad_medida === 'docena' ? 1/12 : 1;
+            const costeLinea = precioUnitario * cantidadConMerma * factorUnidad / (platoData.porciones_base || 1) * (platoData.factor_porcion || 1);
             return {
               ...linea,
               ingrediente,
@@ -474,7 +475,7 @@ export default function PlatoDetail() {
                       </div>
                       <div className="flex flex-wrap gap-2 text-xs text-warm-gray mt-0.5">
                         <span>
-                          {linea.cantidad} {linea.ingrediente?.unidad_medida || 'u'}
+                          {linea.cantidad} {linea.ingrediente?.unidad_medida === 'docena' ? 'uds' : linea.ingrediente?.unidad_medida || 'u'}
                         </span>
                         {linea.merma_pct > 0 && (
                           <span className="text-orange-500">
@@ -482,7 +483,7 @@ export default function PlatoDetail() {
                           </span>
                         )}
                         <span>
-                          {formatearMoneda(linea.precioUnitario)} / {linea.ingrediente?.unidad_medida || 'u'}
+                          {formatearMoneda(linea.precioUnitario)} / {linea.ingrediente?.unidad_medida === 'docena' ? 'doc' : linea.ingrediente?.unidad_medida || 'u'}
                         </span>
                       </div>
                     </div>

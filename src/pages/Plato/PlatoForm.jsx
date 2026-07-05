@@ -87,7 +87,7 @@ export default function PlatoForm() {
     try {
       const { data: lineas } = await supabase
         .from('receta_lineas')
-        .select(`cantidad, merma_pct, ingrediente:ingredientes(precio_actual)`)
+        .select(`cantidad, merma_pct, ingrediente:ingredientes(precio_actual, unidad_medida)`)
         .eq('receta_id', recetaId);
       if (!lineas?.length) {
         setCosteReceta(0);
@@ -98,7 +98,8 @@ export default function PlatoForm() {
         const precio = l.ingrediente?.precio_actual || 0;
         const cant = l.cantidad || 0;
         const merma = (l.merma_pct || 0) / 100;
-        return sum + precio * cant * (1 + merma);
+        const factorUnidad = l.ingrediente?.unidad_medida === 'docena' ? 1/12 : 1;
+        return sum + precio * cant * (1 + merma) * factorUnidad;
       }, 0);
       const costeRacion = costeBase / porciones * factorNum;
       setCosteReceta(costeRacion);
