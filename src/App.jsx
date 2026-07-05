@@ -1,5 +1,6 @@
 // src/App.jsx
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { RestaurantProvider } from './contexts/RestaurantContext';
 import { AlertTriangle } from 'lucide-react';
@@ -20,6 +21,12 @@ import ProveedorForm from './pages/Proveedor/ProveedorForm';
 import PreciosIngrediente from './pages/Precios/PreciosIngrediente';
 import Graficos from './pages/Graficos/Graficos';
 import RecetasBase from './pages/Recetas/RecetasBase';
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
 
 function AppRoutes() {
   const { session, loading, error, retry } = useAuth();
@@ -62,7 +69,9 @@ function AppRoutes() {
   }
 
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <Home />} />
       <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" replace />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
@@ -98,6 +107,7 @@ function AppRoutes() {
     <Route path="/proveedores/nuevo" element={<ProtectedRoute><AppLayout><ProveedorForm /></AppLayout></ProtectedRoute>} />
     <Route path="/proveedores/editar/:id" element={<ProtectedRoute><AppLayout><ProveedorForm /></AppLayout></ProtectedRoute>} />
     </Routes>
+    </>
   );
 }
 
