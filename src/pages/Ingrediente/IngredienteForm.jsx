@@ -26,6 +26,8 @@ export default function IngredienteForm() {
   });
   const [proveedores, setProveedores] = useState([]);
   const [mostrarNuevoProveedor, setMostrarNuevoProveedor] = useState(false);
+  const [fechaOriginal, setFechaOriginal] = useState(null);
+  const [showTipoCompra, setShowTipoCompra] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,6 +60,7 @@ export default function IngredienteForm() {
             proveedor_habitual_id: iData.proveedor_habitual_id || '',
             nuevoProveedorNombre: '',
           });
+          setFechaOriginal(iData.fecha_compra || null);
 
         }
         setLoading(false);
@@ -71,41 +74,79 @@ export default function IngredienteForm() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  function handleSubmit(e) {
     e.preventDefault();
     if (!restauranteId) {
       setError('Restaurante no definido');
       return;
     }
+    if (id && fechaOriginal && formData.fecha_compra !== fechaOriginal) {
+      setShowTipoCompra(true);
+      return;
+    }
+    doSave();
+  }
+
+  function cerrarModal() {
+    setShowTipoCompra(false);
+    setError(null);
+  }
+
+  async function doSave(tipo) {
     setSaving(true);
     setError(null);
-
-    let proveedorId = formData.proveedor_habitual_id;
-
-    // Si es un nuevo proveedor, crearlo primero
-    if (formData.proveedor_habitual_id === '__nuevo__' && formData.nuevoProveedorNombre?.trim()) {
-      const { data: newProv, error: provError } = await supabase
-        .from('proveedores')
-        .insert([{ restaurante_id: restauranteId, nombre: formData.nuevoProveedorNombre.trim() }])
-        .select()
-        .single();
-      if (provError) throw provError;
-      proveedorId = newProv.id;
-      setProveedores(prev => [...prev, { id: newProv.id, nombre: newProv.nombre }]);
-    }
-
-    const dataToSave = {
-      restaurante_id: restauranteId,
-      nombre: formData.nombre,
-      unidad_medida: formData.unidad_medida,
-      precio_actual: parseFloat(formData.precio_actual) || 0,
-      fecha_compra: formData.fecha_compra || new Date().toISOString().slice(0, 10),
-      categoria: formData.categoria || null,
-      proveedor_habitual_id: proveedorId || null,
-      updated_at: new Date().toISOString(),
-    };
+    setShowTipoCompra(false);
 
     try {
+      let proveedorId = formData.proveedor_habitual_id;
+
+      if (formData.proveedor_habitual_id === '__nuevo__' && formData.nuevoProveedorNombre?.trim()) {
+        const { data: newProv, error: provError } = await supabase
+          .from('proveedores')
+          .insert([{ restaurante_id: restauranteId, nombre: formData.nuevoProveedorNombre.trim() }])
+          .select()
+          .single();
+        if (provError) throw provError;
+        proveedorId = newProv.id;
+        setProveedores(prev => [...prev, { id: newProv.id, nombre: newProv.nombre }]);
+      }
+
+      const precioNum = parseFloat(formData.precio_actual) || 0;
+
+      if (id && tipo === 'pasada') {
+        const { data: ingActual } = await supabase
+          .from('ingredientes')
+          .select('precio_actual, restaurante_id')
+          .eq('id', id)
+          .single();
+
+        await supabase
+          .from('precios_historicos')
+          .insert({
+            ingrediente_id: id,
+            precio: precioNum,
+            fecha: formData.fecha_compra,
+            precio_anterior: ingActual?.precio_actual || 0,
+            precio_nuevo: precioNum,
+            restaurante_id: ingActual?.restaurante_id || restauranteId,
+            creado_en: new Date().toISOString(),
+          });
+
+        navigate('/ingredientes', { replace: true });
+        return;
+      }
+
+      const dataToSave = {
+        restaurante_id: restauranteId,
+        nombre: formData.nombre,
+        unidad_medida: formData.unidad_medida,
+        precio_actual: precioNum,
+        fecha_compra: formData.fecha_compra || new Date().toISOString().slice(0, 10),
+        categoria: formData.categoria || null,
+        proveedor_habitual_id: proveedorId || null,
+        updated_at: new Date().toISOString(),
+      };
+
       let result;
       if (id) {
         result = await supabase
@@ -119,13 +160,29 @@ export default function IngredienteForm() {
           .insert([dataToSave]);
       }
       if (result.error) throw result.error;
+
+      if (id) {
+        const { data: lastRecord } = await supabase
+          .from('precios_historicos')
+          .select('id')
+          .eq('ingrediente_id', id)
+          .order('creado_en', { ascending: false })
+          .limit(1);
+        if (lastRecord?.length) {
+          await supabase
+            .from('precios_historicos')
+            .update({ fecha: formData.fecha_compra })
+            .eq('id', lastRecord[0].id);
+        }
+      }
+
       navigate('/ingredientes', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
       setSaving(false);
     }
-  };
+  }
 
   const handleDelete = async () => {
     if (!id || !window.confirm('¿Eliminar este ingrediente?')) return;
@@ -314,6 +371,43 @@ export default function IngredienteForm() {
             )}
           </div>
         </form>
+
+        {showTipoCompra && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={cerrarModal}>
+            <div className="fixed inset-0 bg-black/40" />
+            <div className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-xl animate-slide-up" onClick={e => e.stopPropagation()}>
+              <h3 className="font-bold text-ink text-lg mb-2">¿Qué tipo de compra es?</h3>
+              <p className="text-sm text-ink-soft mb-4">
+                Ha cambiado la fecha de compra. ¿Es el precio actual del ingrediente o una compra pasada que solo debe registrarse en el histórico?
+              </p>
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => doSave('actual')}
+                  className="w-full text-left bg-olive text-white rounded-xl px-4 py-3 font-semibold hover:bg-olive-dark transition-colors"
+                >
+                  <span className="block">Compra actual</span>
+                  <span className="block text-xs opacity-80 mt-0.5">Actualiza el precio del ingrediente en las recetas</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => doSave('pasada')}
+                  className="w-full text-left border border-warm-gray/30 text-ink rounded-xl px-4 py-3 font-semibold hover:bg-warm-gray/5 transition-colors"
+                >
+                  <span className="block">Compra pasada</span>
+                  <span className="block text-xs text-warm-gray mt-0.5">Solo afecta a gráficos e histórico, no a las recetas</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={cerrarModal}
+                  className="w-full text-center text-sm text-warm-gray hover:text-ink py-2 transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
