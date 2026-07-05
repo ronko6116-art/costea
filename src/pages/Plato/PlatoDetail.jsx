@@ -7,11 +7,11 @@ import {
   TrendingDown, 
   TrendingUp, 
   AlertTriangle,
-  Plus,
   Check,
   X,
   Edit3,
-  Trash2
+  Trash2,
+  BookOpen
 } from 'lucide-react';
 import { formatearMoneda } from '../../functions/formatters';
 
@@ -80,10 +80,12 @@ export default function PlatoDetail() {
             const cantidadConMerma = linea.cantidad * (1 + (linea.merma_pct || 0) / 100);
             const factorUnidad = ingrediente.unidad_medida === 'docena' ? 1/12 : 1;
             const costeLinea = precioUnitario * cantidadConMerma * factorUnidad / (platoData.porciones_base || 1) * (platoData.factor_porcion || 1);
+            const cantidadEscalada = linea.cantidad / (platoData.porciones_base || 1) * (platoData.factor_porcion || 1);
             return {
               ...linea,
               ingrediente,
               cantidadConMerma,
+              cantidadEscalada,
               costeLinea,
               precioUnitario,
             };
@@ -223,8 +225,8 @@ export default function PlatoDetail() {
               onClick={() => navigate('/recetas', { state: { expandRecipeId: plato.receta_id } })}
               className="bg-olive text-white rounded-full px-4 py-2 text-sm font-semibold"
             >
-              <Plus className="h-4 w-4 inline mr-1" />
-              Receta
+              <BookOpen className="h-4 w-4 inline mr-1" />
+              Editar receta
             </button>
           </div>
         </div>
@@ -475,7 +477,7 @@ export default function PlatoDetail() {
                       </div>
                       <div className="flex flex-wrap gap-2 text-xs text-warm-gray mt-0.5">
                         <span>
-                          {linea.cantidad} {linea.ingrediente?.unidad_medida === 'docena' ? 'uds' : linea.ingrediente?.unidad_medida || 'u'}
+                          {Number(linea.cantidadEscalada).toFixed(3).replace(/\.?0+$/, '')} {linea.ingrediente?.unidad_medida === 'docena' ? 'uds' : linea.ingrediente?.unidad_medida || 'u'}
                         </span>
                         {linea.merma_pct > 0 && (
                           <span className="text-orange-500">
