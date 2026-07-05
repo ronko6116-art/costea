@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
-import { ArrowLeft, Plus, BookOpen, Loader2, Edit3, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, BookOpen, Loader2, Edit3, Trash2, Check, X } from 'lucide-react';
 import { formatearMoneda } from '../../functions/formatters';
 import { CATEGORIAS } from '../../utils/categorias';
 
@@ -23,6 +23,9 @@ function RecetaCard({ receta, onRecetaChange }) {
   const [nuevoUnidad, setNuevoUnidad] = useState('kg');
   const [nuevoCat, setNuevoCat] = useState('');
   const [nuevoPrecio, setNuevoPrecio] = useState('');
+  const [editandoLineaId, setEditandoLineaId] = useState(null);
+  const [editCantidad, setEditCantidad] = useState('');
+  const [editMerma, setEditMerma] = useState('');
 
   useEffect(() => {
     loadIng();
@@ -94,6 +97,38 @@ function RecetaCard({ receta, onRecetaChange }) {
     }
   }
 
+  function empezarEditar(linea) {
+    setEditandoLineaId(linea.id);
+    setEditCantidad(String(linea.cantidad));
+    setEditMerma(String(linea.merma_pct || 0));
+  }
+
+  async function handleUpdate(lineaId) {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('receta_lineas')
+        .update({ cantidad: parseFloat(editCantidad), merma_pct: parseFloat(editMerma) || 0 })
+        .eq('id', lineaId);
+      if (error) throw error;
+      setLineas(lineas.map(l =>
+        l.id === lineaId ? { ...l, cantidad: parseFloat(editCantidad), merma_pct: parseFloat(editMerma) || 0 } : l
+      ));
+      setEditandoLineaId(null);
+      onRecetaChange();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function cancelarEditar() {
+    setEditandoLineaId(null);
+    setEditCantidad('');
+    setEditMerma('');
+  }
+
   async function handleRemove(lineaId) {
     if (!confirm('¿Eliminar este ingrediente?')) return;
     const removed = lineas.find(l => l.id === lineaId);
@@ -152,18 +187,59 @@ function RecetaCard({ receta, onRecetaChange }) {
             ) : (
               <div className="divide-y divide-warm-gray/10 mb-3">
                 {lineas.map(l => (
-                  <div key={l.id} className="py-2 flex justify-between items-center">
-                    <div>
-                      <p className="text-sm font-medium text-ink">{l.ingrediente.nombre}</p>
-                      <p className="text-xs text-warm-gray">
-                        {l.cantidad} {l.ingrediente.unidad_medida}
-                        {l.merma_pct > 0 && <span className="text-orange-500 ml-1">merma {l.merma_pct}%</span>}
-                        <span className="ml-1">· {formatearMoneda(l.ingrediente.precio_actual)}/{l.ingrediente.unidad_medida}</span>
-                      </p>
-                    </div>
-                    <button onClick={() => handleRemove(l.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-full">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                  <div key={l.id} className="py-2 flex justify-between items-start gap-2">
+                    {editandoLineaId === l.id ? (
+                      <div className="flex-1 space-y-2">
+                        <p className="text-sm font-medium text-ink">{l.ingrediente.nombre}</p>
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="number" step="0.001" min="0"
+                            value={editCantidad}
+                            onChange={e => setEditCantidad(e.target.value)}
+                            className="w-20 rounded-lg border border-warm-gray/30 px-2 py-1 text-sm bg-white"
+                          />
+                          <span className="text-xs text-warm-gray">{l.ingrediente.unidad_medida}</span>
+                          <select
+                            value={editMerma}
+                            onChange={e => setEditMerma(e.target.value)}
+                            className="rounded-lg border border-warm-gray/30 px-2 py-1 text-sm bg-white"
+                          >
+                            <option value="0">Sin merma</option>
+                            <option value="20">Merma 20%</option>
+                            <option value="40">Merma 40%</option>
+                          </select>
+                        </div>
+                        <div className="flex gap-1">
+                          <button onClick={() => handleUpdate(l.id)} disabled={saving}
+                            className="p-1.5 text-olive hover:bg-olive/10 rounded-full">
+                            <Check className="h-4 w-4" />
+                          </button>
+                          <button onClick={cancelarEditar}
+                            className="p-1.5 text-warm-gray hover:bg-warm-gray/10 rounded-full">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-ink">{l.ingrediente.nombre}</p>
+                          <p className="text-xs text-warm-gray">
+                            {l.cantidad} {l.ingrediente.unidad_medida}
+                            {l.merma_pct > 0 && <span className="text-orange-500 ml-1">merma {l.merma_pct}%</span>}
+                            <span className="ml-1">· {formatearMoneda(l.ingrediente.precio_actual)}/{l.ingrediente.unidad_medida}</span>
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => empezarEditar(l)} className="p-1.5 text-olive hover:bg-olive/10 rounded-full">
+                            <Edit3 className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => handleRemove(l.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-full">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -243,7 +319,7 @@ export default function RecetasBase() {
   const [saving, setSaving] = useState(false);
   const [platosCount, setPlatosCount] = useState({});
   const [editRecetaId, setEditRecetaId] = useState(null);
-  const [expandedIngredientes, setExpandedIngredientes] = useState({});
+  const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
     if (!restauranteId) return;
@@ -362,10 +438,15 @@ export default function RecetasBase() {
             <p className="text-sm text-warm-gray mt-1">Crea una para empezar a gestionar tus ingredientes.</p>
           </div>
         ) : (
-          recetas.map(rb => (
+          recetas.map(rb => {
+            const isOpen = expandedId === rb.id;
+            return (
             <div key={rb.id} className="space-y-1">
               <div className="bg-white rounded-xl border border-warm-gray/10 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 border-b border-warm-gray/10 flex items-center justify-between">
+                <button
+                  onClick={() => setExpandedId(isOpen ? null : rb.id)}
+                  className="w-full px-4 py-3 border-b border-warm-gray/10 flex items-center justify-between text-left hover:bg-warm-gray/5 transition-colors"
+                >
                   <div>
                     <h3 className="font-bold text-ink">{rb.nombre}</h3>
                     <p className="text-xs text-warm-gray">
@@ -373,7 +454,7 @@ export default function RecetasBase() {
                       {platosCount[rb.id] > 0 && ` · ${platosCount[rb.id]} plato${platosCount[rb.id] > 1 ? 's' : ''}`}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     <button onClick={() => abrirEditar(rb)} className="p-1.5 rounded-full hover:bg-olive/10 text-olive transition-colors">
                       <Edit3 className="h-4 w-4" />
                     </button>
@@ -381,11 +462,12 @@ export default function RecetasBase() {
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-                </div>
-                <RecetaCard receta={rb} onRecetaChange={fetchRecetas} />
+                </button>
+                {isOpen && <RecetaCard receta={rb} onRecetaChange={fetchRecetas} />}
               </div>
             </div>
-          ))
+            );
+          })
         )}
       </main>
 
