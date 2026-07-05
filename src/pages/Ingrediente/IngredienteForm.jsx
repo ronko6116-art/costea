@@ -19,6 +19,7 @@ export default function IngredienteForm() {
     nombre: '',
     unidad_medida: 'kg',
     precio_actual: '',
+    fecha_compra: new Date().toISOString().slice(0, 10),
     categoria: '',
     proveedor_habitual_id: '',
     nuevoProveedorNombre: '',
@@ -52,6 +53,7 @@ export default function IngredienteForm() {
             nombre: iData.nombre || '',
             unidad_medida: iData.unidad_medida || 'kg',
             precio_actual: iData.precio_actual || '',
+            fecha_compra: iData.fecha_compra || new Date().toISOString().slice(0, 10),
             categoria: iData.categoria || '',
             proveedor_habitual_id: iData.proveedor_habitual_id || '',
             nuevoProveedorNombre: '',
@@ -97,6 +99,7 @@ export default function IngredienteForm() {
       nombre: formData.nombre,
       unidad_medida: formData.unidad_medida,
       precio_actual: parseFloat(formData.precio_actual) || 0,
+      fecha_compra: formData.fecha_compra || new Date().toISOString().slice(0, 10),
       categoria: formData.categoria || null,
       proveedor_habitual_id: proveedorId || null,
       updated_at: new Date().toISOString(),
@@ -211,6 +214,19 @@ export default function IngredienteForm() {
               required
               step="0.01"
               min="0"
+              className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1">
+              Fecha de compra
+            </label>
+            <input
+              type="date"
+              name="fecha_compra"
+              value={formData.fecha_compra}
+              onChange={handleChange}
               className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
             />
           </div>

@@ -154,7 +154,7 @@ function RecetaCard({ receta, onRecetaChange }) {
       const { data: nuevo, error } = await supabase
         .from('ingredientes')
         .insert([{ restaurante_id: rid, nombre: nuevoNom.trim(), unidad_medida: nuevoUnidad, precio_actual: parseFloat(nuevoPrecio) || 0, categoria: nuevoCat || null }])
-        .select('id, nombre, unidad_medida, precio_actual')
+        .select('id, nombre, unidad_medida, precio_actual, fecha_compra')
         .single();
       if (error) throw error;
       setDisponibles([...disponibles, { ...nuevo }]);

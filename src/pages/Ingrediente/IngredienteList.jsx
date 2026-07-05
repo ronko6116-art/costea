@@ -141,6 +141,7 @@ export default function IngredienteList() {
                             <div className="flex flex-wrap gap-2 text-xs text-warm-gray">
                               <span>{formatearMoneda(ing.precio_actual)} / {ing.unidad_medida}</span>
                               {ing.proveedor && <span>· {ing.proveedor.nombre}</span>}
+                              {ing.fecha_compra && <span>· {new Date(ing.fecha_compra).toLocaleDateString('es-ES')}</span>}
                             </div>
                           </div>
                           <div className="flex gap-1">
