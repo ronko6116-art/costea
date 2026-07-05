@@ -172,8 +172,8 @@ function RecetaCard({ receta, onRecetaChange }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-warm-gray/10 shadow-sm overflow-hidden">
-      <div className="p-4">
+    <div className="bg-white/80 rounded-xl border border-warm-gray/10 shadow-sm overflow-hidden">
+      <div className="p-4 bg-warm-gray/[0.03]">
         {error && (
           <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">{error}</div>
         )}
@@ -189,34 +189,34 @@ function RecetaCard({ receta, onRecetaChange }) {
                 {lineas.map(l => (
                   <div key={l.id} className="py-2 flex justify-between items-start gap-2">
                     {editandoLineaId === l.id ? (
-                      <div className="flex-1 space-y-2">
-                        <p className="text-sm font-medium text-ink">{l.ingrediente.nombre}</p>
+                      <div className="flex-1 space-y-2 p-3 -m-3 bg-terracotta/5 rounded-lg border border-terracotta/20">
+                        <p className="text-sm font-semibold text-terracotta">{l.ingrediente.nombre}</p>
                         <div className="flex gap-2 items-center">
                           <input
                             type="number" step="0.001" min="0"
                             value={editCantidad}
                             onChange={e => setEditCantidad(e.target.value)}
-                            className="w-20 rounded-lg border border-warm-gray/30 px-2 py-1 text-sm bg-white"
+                            className="w-20 rounded-lg border border-terracotta/30 px-2 py-2 text-sm bg-white font-medium"
                           />
-                          <span className="text-xs text-warm-gray">{l.ingrediente.unidad_medida}</span>
+                          <span className="text-xs text-warm-gray font-medium">{l.ingrediente.unidad_medida}</span>
                           <select
                             value={editMerma}
                             onChange={e => setEditMerma(e.target.value)}
-                            className="rounded-lg border border-warm-gray/30 px-2 py-1 text-sm bg-white"
+                            className="rounded-lg border border-terracotta/30 px-2 py-2 text-sm bg-white font-medium"
                           >
                             <option value="0">Sin merma</option>
                             <option value="20">Merma 20%</option>
                             <option value="40">Merma 40%</option>
                           </select>
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex gap-2 pt-1">
                           <button onClick={() => handleUpdate(l.id)} disabled={saving}
-                            className="p-1.5 text-olive hover:bg-olive/10 rounded-full">
-                            <Check className="h-4 w-4" />
+                            className="flex items-center gap-1 bg-olive text-white rounded-full px-3 py-1.5 text-xs font-semibold">
+                            <Check className="h-3.5 w-3.5" /> Guardar
                           </button>
                           <button onClick={cancelarEditar}
-                            className="p-1.5 text-warm-gray hover:bg-warm-gray/10 rounded-full">
-                            <X className="h-4 w-4" />
+                            className="flex items-center gap-1 border border-warm-gray/30 text-ink-soft rounded-full px-3 py-1.5 text-xs font-medium">
+                            <X className="h-3.5 w-3.5" /> Cancelar
                           </button>
                         </div>
                       </div>
@@ -445,7 +445,7 @@ export default function RecetasBase() {
               <div className="bg-white rounded-xl border border-warm-gray/10 shadow-sm overflow-hidden">
                 <button
                   onClick={() => setExpandedId(isOpen ? null : rb.id)}
-                  className="w-full px-4 py-3 border-b border-warm-gray/10 flex items-center justify-between text-left hover:bg-warm-gray/5 transition-colors"
+                  className="w-full px-4 py-3 border-b border-warm-gray/10 flex items-center justify-between text-left bg-olive/5 hover:bg-olive/10 transition-colors border-l-4 border-l-olive"
                 >
                   <div>
                     <h3 className="font-bold text-ink">{rb.nombre}</h3>
