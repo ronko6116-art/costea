@@ -15,7 +15,6 @@ import PlatoDetail from './pages/Plato/PlatoDetail';
 import PlatoForm from './pages/Plato/PlatoForm';
 import IngredienteList from './pages/Ingrediente/IngredienteList';
 import IngredienteForm from './pages/Ingrediente/IngredienteForm';
-import RecetaManager from './pages/Plato/RecetaManager';
 import ProveedorList from './pages/Proveedor/ProveedorList';
 import ProveedorForm from './pages/Proveedor/ProveedorForm';
 import PreciosIngrediente from './pages/Precios/PreciosIngrediente';
@@ -100,7 +99,6 @@ function AppRoutes() {
     <Route path="/ingredientes/nuevo" element={<ProtectedRoute><AppLayout><IngredienteForm /></AppLayout></ProtectedRoute>} />
     <Route path="/ingredientes/editar/:id" element={<ProtectedRoute><AppLayout><IngredienteForm /></AppLayout></ProtectedRoute>} />
     <Route path="/recetas" element={<ProtectedRoute><AppLayout><RecetasBase /></AppLayout></ProtectedRoute>} />
-    <Route path="/recetas/:id/ingredientes" element={<ProtectedRoute><AppLayout><RecetaManager /></AppLayout></ProtectedRoute>} />
     <Route path="/graficos" element={<ProtectedRoute><AppLayout><Graficos /></AppLayout></ProtectedRoute>} />
     <Route path="/precios" element={<ProtectedRoute><AppLayout><PreciosIngrediente /></AppLayout></ProtectedRoute>} />
     <Route path="/proveedores" element={<ProtectedRoute><AppLayout><ProveedorList /></AppLayout></ProtectedRoute>} />

@@ -219,7 +219,7 @@ export default function PlatoDetail() {
               <Trash2 className="h-5 w-5" />
             </button>
             <button
-              onClick={() => navigate(`/recetas/${plato.receta_id}/ingredientes`)}
+              onClick={() => navigate('/recetas', { state: { expandRecipeId: plato.receta_id } })}
               className="bg-olive text-white rounded-full px-4 py-2 text-sm font-semibold"
             >
               <Plus className="h-4 w-4 inline mr-1" />
@@ -449,7 +449,7 @@ export default function PlatoDetail() {
             <div className="px-5 py-8 text-center text-ink-soft">
               <p>Esta receta aún no tiene ingredientes.</p>
               <button
-                onClick={() => navigate(`/recetas/${plato.receta_id}/ingredientes`)}
+                onClick={() => navigate('/recetas', { state: { expandRecipeId: plato.receta_id } })}
                 className="mt-2 text-terracotta font-semibold"
               >
                 Gestionar receta

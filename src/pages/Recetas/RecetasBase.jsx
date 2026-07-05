@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
@@ -307,6 +307,7 @@ function RecetaCard({ receta, onRecetaChange }) {
 
 export default function RecetasBase() {
   const navigate = useNavigate();
+  const location = useLocation();
   useAuth();
   const { restauranteId } = useRestaurant();
   const [recetas, setRecetas] = useState([]);
@@ -325,6 +326,14 @@ export default function RecetasBase() {
     if (!restauranteId) return;
     fetchRecetas();
   }, [restauranteId]);
+
+  useEffect(() => {
+    const recipeId = location.state?.expandRecipeId;
+    if (recipeId) {
+      setExpandedId(recipeId);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   async function fetchRecetas() {
     setLoading(true);
