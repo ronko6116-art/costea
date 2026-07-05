@@ -14,10 +14,13 @@
 - **Onboarding**: crear primer restaurante si no existe
 - **Dashboard**: lista de platos con tarjetas (nombre, venta, coste, margen)
 - **CRUD de platos**: crear, editar, eliminar platos con categoría, precio venta, margen objetivo
-- **CRUD de ingredientes**: crear, editar, eliminar ingredientes con nombre, unidad, precio, categoría, proveedor
+- **CRUD de ingredientes**: crear, editar, eliminar ingredientes con nombre, unidad, precio, categoría, proveedor, fecha de compra
 - **CRUD de proveedores**: crear, editar, eliminar proveedores (nombre, persona contacto, teléfono, email, notas)
 - **Recetas**: añadir/eliminar ingredientes a un plato con cantidad y % de merma
+- **Acordeón de recetas** en RecetasBase: recetas colapsadas por defecto, se expanden al hacer click; auto-expand desde PlatoDetail
+- **Cantidad de ingredientes en unidades** para ingredientes medidos por docenas (6 = 6 huevos, no 6 docenas)
 - **Vista `vista_coste_platos`**: recálculo automático de coste total y margen al cambiar precios, cantidades o merma
+- **RLS activado en todas las tablas**: políticas `owner_id = auth.uid()` que impiden acceso a datos de otros restaurantes aunque se consulte directamente la API REST
 
 ### Páginas públicas (Landing)
 - **Home** con navbar público (Costea logo, Funciones, Contacto, Login/Signup)
@@ -40,6 +43,8 @@
 - **Modal de edición de ingrediente** desde PlatoDetail (tocar ingrediente para editar)
 - **Creación inline de categorías y proveedores** desde selects (con opción "+ Crear nuevo")
 - **Creación inline de ingredientes en RecetaManager** con nombre, unidad, categoría y **precio de compra**
+- **Selector de ingredientes estilizado** en recetas: lista con buscador, nombre del proveedor y precio por unidad
+- **Modal de tipo de compra** al cambiar fecha: permite elegir entre "Compra actual" (actualiza precio) o "Compra pasada" (solo histórico)
 - **Página de Precios** (`/precios`): edición inline de precios por categorías colapsables, con formato "6,00 € / Kg"
 - **Alertas de margen** computadas localmente desde `vista_coste_platos` (sin tabla alertas en DB)
 - **Inline editing** de precio_venta y margen_objetivo en PlatoDetail
@@ -109,6 +114,16 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 | `008_fix_ingrediente_id_type.sql` | Cambia `ingrediente_id` de BIGINT a uuid + recrea trigger | ✅ Aplicada |
 | `009_rls_precios_historicos.sql` | Desactiva RLS y otorga permisos a anon/authenticated en `precios_historicos` | ✅ Aplicada |
 | `010_fix_trigger_defaults.sql` | Añade defaults a `id` (uuid gen_random), `fecha`, `precio`; recrea trigger | ✅ Aplicada |
+| `011_fix_trigger.sql` | (desconocido) | ✅ Aplicada |
+| `012_ventas_diarias.sql` | Crea tabla ventas_diarias | ✅ Aplicada |
+| `013_recetas_base.sql` | Crea tabla recetas_base | ✅ Aplicada |
+| `014_vista_receta_id.sql` | Actualiza vista_coste_platos | ✅ Aplicada |
+| `015_permisos_recetas_base.sql` | Permisos en recetas_base | ✅ Aplicada |
+| `016_rls_receta_lineas.sql` | Permisos en receta_lineas | ✅ Aplicada |
+| `017_vista_porciones_base.sql` | Actualiza vista con porciones_base | ✅ Aplicada |
+| `018_trigger_insert_ingredientes.sql` | Trigger dispara en INSERT+UPDATE de precio_actual; backfill de históricos; grant SELECT ingredientes | ✅ Aplicada vía API |
+| `019_add_fecha_compra.sql` | Añade columna `fecha_compra DATE` a ingredientes | ✅ Aplicada vía API |
+| `020_enable_rls_all_tables.sql` | Activa RLS en todas las tablas restantes (precios_historicos, precios_proveedor, receta_lineas, recetas_base, ventas_diarias). Políticas consistentes: `restaurante_id IN (SELECT id FROM restaurantes WHERE owner_id = auth.uid())`. Trigger SECURITY DEFINER para bypass de RLS. Revoca permisos excesivos de anon. | ✅ Aplicada vía API |
 | `999_mock_historicos.sql` | Genera datos mock de histórico de precios para pruebas | ⚠️ Sólo tests |
 
 ---
@@ -137,13 +152,12 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 ### Medios
 - **Precios en 3 sitios**: `ingredientes.precio_actual` + `precios_proveedor` + `precios_historicos` — posible deriva si algún code path no actualiza todos.
 - **Directorios vacíos**: `src/hooks/`, `src/functions/formatters/`, `src/assets/` existen pero no tienen contenido.
-- **RecetaManager fallback a "todos los ingredientes"**: si no encuentra ingredientes para el restaurante del plato, hace un fallback a todos sin filtrar (líneas 88-98). Debería eliminar ese fallback tras la migración completa.
 
 ### Bajos
-- **Suppliers sin filtro en IngredienteForm**: en `IngredienteForm.jsx` se fetchan todos los proveedores sin filtrar por restaurante (línea 51).
 - **Restaurante en localStorage**: funciona para una pestaña, pero podría quedar referencia huérfana si se borra el restaurante en otra pestaña.
 - **check-email edge function muerta**: no se referencia desde el frontend; `Recuperar.jsx` usa un hack propio (login con fake password) para detectar cuentas.
 - **Mock histórico de precios**: `999_mock_historicos.sql` inserta datos de prueba. Si se ejecuta en producción, podría contaminar datos reales.
+- **RecetaManager.jsx obsoleto**: componente sin usar tras eliminar ruta `/recetas/:id/ingredientes` (marzo 2025). Se puede eliminar.
 
 ---
 
@@ -156,6 +170,13 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 | **App se queda en "Cargando..." al abrir desde pantalla de inicio** | AuthContext: añadido `.catch()` en `getSession()`, timeout 8s, limpieza de localStorage corrupto, y estado `error` con botones Reintentar/Ir al login |
 | **Login no completaba (AuthCallback polling sin error handling)** | Añadido `try/catch` en el polling de `checkSession()` y contador de intentos incluso con error |
 | **Servicio de mock no filtrando por usuario** | Migración 999_mock_historicos respeta `restaurante_id` en cada inserción, y los queries frontend ya filtran correctamente |
+| **Ingredientes sin histórico en gráfica de evolución** | Trigger recreado para disparar también en INSERT (018), backfill de registros históricos |
+| **Botón '+ Receta' en PlatoDetail iba a editor antiguo** | Redirigido a RecetasBase con auto-expand del acordeón; ruta `/recetas/:id/ingredientes` eliminada |
+| **Cantidad de ingredientes en docenas confusa** | Ahora la cantidad se interpreta en unidades (no docenas); coste dividido por 12; display muestra "uds" |
+| **Selector de ingredientes nativo (feo)** | Reemplazado por lista estilizada con buscador, nombre del proveedor y precio por unidad |
+| **Ingredientes sin campo fecha de compra** | Migración 019 añade `fecha_compra DATE`; formulario incluye input tipo date |
+| **Al cambiar fecha de compra, sin distinción entre compra actual o pasada** | Modal que pregunta al usuario: "Compra actual" (actualiza precio) o "Compra pasada" (solo histórico) |
+| **RLS desactivado en precios_historicos, precios_proveedor, receta_lineas, recetas_base, ventas_diarias** | Migración 020 activa RLS con políticas owner-based en todas las tablas; trigger function marcada SECURITY DEFINER para insertar en histórico sin fricción; permisos de anon revocados en tablas sensibles |
 
 ---
 
@@ -166,13 +187,15 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 
 ### Prioridad 2 — Medio impacto
 4. **Clonar recetas**: botón para duplicar un plato con todos sus ingredientes (útil para variaciones: ración/media ración)
-5. **Eliminar fallback global de ingredientes en RecetaManager**: quitar el `order('nombre')` sin filtro de restaurante (líneas 88-98)
-6. **Filtrar proveedores por restaurante en IngredienteForm y PlatoDetail**: actualmente fetchan todos sin filtrar
+5. **Filtrar proveedores por restaurante en IngredienteForm**: actualmente fetchan todos sin filtrar
+6. **Eliminar RecetaManager.jsx obsoleto**: componente sin uso desde que se eliminó la ruta `/recetas/:id/ingredientes`
+7. **Mover 999_mock_historicos.sql fuera de migrations/**: añadir guarda de entorno o mover a carpeta de tests
 
 ### Prioridad 3 — Bajo impacto
-7. **Modo oscuro** (CSS variables + toggle) — útil en cocinas con poca luz
-8. **Exportar menú a PDF/WhatsApp** — lista limpia con costes para compartir
-9. **Llenar directorios vacíos** — hooks, formatters, assets
+8. **Modo oscuro** (CSS variables + toggle) — útil en cocinas con poca luz
+9. **Exportar menú a PDF/WhatsApp** — lista limpia con costes para compartir
+10. **Llenar directorios vacíos** — hooks, formatters, assets
+11. **Reemplazar hack Recuperar.jsx** — usar edge function check-email con admin API en lugar del login con password falsa
 
 ---
 
@@ -188,7 +211,7 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 | Restaurante separado del usuario | Un usuario puede tener varios locales |
 | Histórico vía trigger SQL (no frontend) | Garantiza que ningún cambio de precio quede sin registrar |
 | recharts para gráficas | Reactivo, declarativo, sin TypeScript, componentes simples |
-| **RLS desactivado (migración 006, no 005)** | El control de acceso se hace desde el frontend filtrando por `restaurante_id`. Más simple, evita problemas de políticas RLS complejas |
+| **RLS activado en todas las tablas (migración 020)** | El control desde el frontend (`.eq('restaurante_id', ...)`) es insuficiente: cualquiera con DevTools puede llamar directamente a la API REST usando la anon key pública. RLS es la única barrera real a nivel BD. Trigger guardar_precios_historico marcado SECURITY DEFINER para que pueda insertar en precios_historicos sin pasar por RLS del usuario. |
 | **Categorías centralizadas en `src/utils/categorias.js`** | Elimina duplicación de la lista en 3 componentes. Fácil de mantener y extender |
 | **ErrorBoundary global** | Captura errores inesperados de React sin colapsar la app. UI diferenciada para desarrollo (detalles técnicos) y producción (mensaje amigable) |
 | **PWA con service worker** | Permite instalar la app en móvil, sesión persistente al abrir desde pantalla de inicio, carga más rápida gracias al precaching |
@@ -241,12 +264,14 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 │   │   │   ├── Dashboard.jsx         # Home: platos, alertas, selector restaurante
 │   │   │   └── Onboarding.jsx        # Crear primer restaurante
 │   │   ├── Plato/
-│   │   │   ├── PlatoDetail.jsx       # Detalle + inline editing + modal ingredientes
-│   │   │   ├── PlatoForm.jsx         # Crear/editar plato
-│   │   │   └── RecetaManager.jsx     # Añadir/eliminar ingredientes + crear con precio
+│   │   │   ├── PlatoDetail.jsx       # Detalle + inline editing + acordeón recetas
+│   │   │   ├── PlatoForm.jsx         # Crear/editar plato (con factor docena)
+│   │   │   └── RecetaManager.jsx     # (obsoleto, sin uso desde mar 2025)
 │   │   ├── Ingrediente/
-│   │   │   ├── IngredienteForm.jsx   # Crear/editar ingrediente
-│   │   │   └── IngredienteList.jsx   # Lista con búsqueda y categorías
+│   │   │   ├── IngredienteForm.jsx   # Crear/editar ingrediente con fecha_compra + modal tipo compra
+│   │   │   └── IngredienteList.jsx   # Lista con búsqueda, categorías y fecha de compra
+│   │   ├── Recetas/
+│   │   │   └── RecetasBase.jsx       # Acordeón de recetas + selector estilizado de ingredientes
 │   │   ├── Proveedor/
 │   │   │   ├── ProveedorForm.jsx     # Crear/editar proveedor
 │   │   │   └── ProveedorList.jsx     # Lista con acordeón de productos
@@ -261,11 +286,10 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 │   ├── functions/check-email/index.ts # Edge Function (comentada)
 │   └── migrations/
 │       ├── 001_fix_vista_coste_platos.sql
-│       ├── ...
-│       ├── 005_rls_precios_proveedor.sql  # ❌ No aplicar (ver RLS)
-│       ├── 006_permisos_precios_proveedor.sql  # ✅ Aplicar
-│       ├── ...
-│       └── 010_fix_trigger_defaults.sql
+│       ├── 017_vista_porciones_base.sql
+│       ├── 018_trigger_insert_ingredientes.sql  # Trigger INSERT+UPDATE + backfill
+│       ├── 019_add_fecha_compra.sql             # Columna fecha_compra en ingredientes
+│       └── 020_enable_rls_all_tables.sql        # RLS en todas las tablas + trigger SECURITY DEFINER
 ├── index.html                       # Meta tags PWA + apple-touch-icon
 ├── .env                             # Variables públicas (Supabase, Turnstile)
 ├── .env.local                       # Desarrollo local (no versionado)
