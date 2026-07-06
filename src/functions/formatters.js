@@ -9,7 +9,7 @@ const monedaFormatterCompacto = new Intl.NumberFormat('es-ES', {
   minimumFractionDigits: 2,
 });
 
-export const UNIDADES_MEDIDA = ['kg', 'g', 'l', 'ml', 'unidad', 'docena'];
+const UNIDADES_MEDIDA = ['kg', 'g', 'l', 'ml', 'unidad', 'docena'];
 
 export function formatearMoneda(valor) {
   return monedaFormatter.format(valor ?? 0);

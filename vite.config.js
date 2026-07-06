@@ -4,6 +4,14 @@ import babel from '@rolldown/plugin-babel'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  test: {
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: ['src/**/*.{js,jsx}'],
+      exclude: ['src/**/*.test.*'],
+    },
+  },
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()] }),
