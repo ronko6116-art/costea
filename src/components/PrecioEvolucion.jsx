@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { format, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { formatearMonedaCompacto } from '../functions/formatters';
 import { useRestaurant } from '../contexts/RestaurantContext';
+import { deduplicarPorFecha, mapearPuntos } from '../helpers/precios';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -19,35 +18,6 @@ const CustomTooltip = ({ active, payload, label }) => {
   }
   return null;
 };
-
-function fechaKey(f) {
-  return f instanceof Date ? f.toISOString().slice(0, 10) : String(f).slice(0, 10);
-}
-
-function deduplicarPorFecha(arr) {
-  const map = new Map();
-  for (const item of arr) {
-    const key = `${fechaKey(item.fecha)}|${item.proveedor_id || ''}`;
-    const existing = map.get(key);
-    if (!existing || new Date(item.creado_en) > new Date(existing.creado_en)) {
-      map.set(key, item);
-    }
-  }
-  return [...map.values()].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-}
-
-function mapearPuntos(arr) {
-  const formatearFecha = (f) => {
-    if (!f) return '';
-    if (typeof f === 'string') return format(parseISO(f), 'dd MMM', { locale: es });
-    return format(f, 'dd MMM', { locale: es });
-  };
-  return arr.map((h) => ({
-    fecha: formatearFecha(h.fecha),
-    precio: h.precio,
-    ts: h.creado_en,
-  }));
-}
 
 export default function PrecioEvolucion({ ingredienteId, onClose }) {
   const { restauranteId } = useRestaurant();

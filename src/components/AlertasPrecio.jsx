@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { TrendingUp, TrendingDown, Minus, ChevronDown } from 'lucide-react';
 import { formatearMonedaCompacto } from '../functions/formatters';
+import { deduplicarPorFecha, fechaKey } from '../helpers/precios';
 
 export default function AlertasPrecio({ restauranteId }) {
   const [ingredientes, setIngredientes] = useState([]);
@@ -34,16 +35,7 @@ export default function AlertasPrecio({ restauranteId }) {
         return;
       }
 
-      const fechaKey = (f) => f instanceof Date ? f.toISOString().slice(0, 10) : String(f).slice(0, 10);
-      const dedupMap = new Map();
-      hist.forEach((h) => {
-        const key = `${h.ingrediente_id}|${fechaKey(h.fecha)}|${h.proveedor_id || ''}`;
-        const existing = dedupMap.get(key);
-        if (!existing || new Date(h.creado_en) > new Date(existing.creado_en)) {
-          dedupMap.set(key, h);
-        }
-      });
-      const deduped = [...dedupMap.values()];
+      const deduped = deduplicarPorFecha(hist, (h) => `${h.ingrediente_id}|${fechaKey(h.fecha)}|${h.proveedor_id || ''}`);
 
       const porIngrediente = {};
       deduped.forEach((h) => {
