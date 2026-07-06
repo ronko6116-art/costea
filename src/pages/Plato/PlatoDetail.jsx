@@ -52,13 +52,7 @@ export default function PlatoDetail() {
 
         if (platoError) throw platoError;
         setPlato(platoData);
-
-        const { data: platoRow } = await supabase
-          .from('platos')
-          .select('activo')
-          .eq('id', id)
-          .single();
-        setActivo(platoRow?.activo !== false);
+        setActivo(platoData.activo !== false);
 
         const { data: recetaData, error: recetaError } = await supabase
           .from('receta_lineas')

@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [categoriaFiltro, setCategoriaFiltro] = useState('');
   const [ordenBeneficio, setOrdenBeneficio] = useState('none'); // 'none', 'asc', 'desc'
   const [showCatMenu, setShowCatMenu] = useState(false);
+  const [mostrarOcultos, setMostrarOcultos] = useState(false);
 
   useEffect(() => {
     if (!loadingRest && restaurantes.length === 0) {
@@ -75,6 +76,9 @@ export default function Dashboard() {
   // Platos filtrados según el filtro activo
   const filteredPlatos = useMemo(() => {
     let result = [...platos];
+    if (!mostrarOcultos) {
+      result = result.filter(p => p.activo !== false);
+    }
     if (filtro === 'alertas') {
       result = result.filter(p => p.margen_objetivo > 0 && p.margen_pct < p.margen_objetivo);
     }
@@ -87,7 +91,7 @@ export default function Dashboard() {
       result.sort((a, b) => b.margen_pct - a.margen_pct);
     }
     return result;
-  }, [platos, filtro, categoriaFiltro, ordenBeneficio]);
+  }, [platos, filtro, categoriaFiltro, ordenBeneficio, mostrarOcultos]);
 
   const handleLogout = async () => {
     await signOut();
@@ -273,7 +277,7 @@ export default function Dashboard() {
 
         {/* Filtros */}
         {platos.length > 0 && (
-          <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="mb-4 flex items-center gap-2 flex-wrap">
             <button
               onClick={() => { setFiltro('todo'); setCategoriaFiltro(''); setShowCatMenu(false); }}
               className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${
@@ -341,6 +345,16 @@ export default function Dashboard() {
               Beneficio
               {ordenBeneficio === 'desc' && ' ↓'}
               {ordenBeneficio === 'asc' && ' ↑'}
+            </button>
+            <button
+              onClick={() => setMostrarOcultos(!mostrarOcultos)}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${
+                mostrarOcultos
+                  ? 'bg-amber-500 text-white border-amber-500'
+                  : 'bg-white text-ink border-warm-gray/20 hover:border-amber-300'
+              }`}
+            >
+              {mostrarOcultos ? 'Ver todos' : 'Solo activos'}
             </button>
             {categoriaFiltro && (
               <button
