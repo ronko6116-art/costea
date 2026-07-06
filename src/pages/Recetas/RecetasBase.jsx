@@ -260,6 +260,7 @@ export default function RecetasBase() {
   const [editandoId, setEditandoId] = useState(null);
   const [editandoNombre, setEditandoNombre] = useState('');
   const [editandoPorc, setEditandoPorc] = useState('1');
+  const [editandoCategoria, setEditandoCategoria] = useState('');
   const [saving, setSaving] = useState(false);
   const [platosCount, setPlatosCount] = useState({});
   const [editRecetaId, setEditRecetaId] = useState(null);
@@ -310,7 +311,7 @@ export default function RecetasBase() {
     if (!editandoNombre.trim()) return;
     setSaving(true);
     try {
-      const data = { restaurante_id: restauranteId, nombre: editandoNombre.trim(), porciones_base: parseInt(editandoPorc) || 1 };
+      const data = { restaurante_id: restauranteId, nombre: editandoNombre.trim(), porciones_base: parseInt(editandoPorc) || 1, categoria: editandoCategoria || null };
       if (editandoId) {
         await supabase.from('recetas_base').update(data).eq('id', editandoId);
       } else {
@@ -321,6 +322,7 @@ export default function RecetasBase() {
       setEditandoId(null);
       setEditandoNombre('');
       setEditandoPorc('1');
+      setEditandoCategoria('');
       setError(null);
       fetchRecetas();
     } catch (err) {
@@ -344,6 +346,7 @@ export default function RecetasBase() {
     setEditandoId(rb.id);
     setEditandoNombre(rb.nombre);
     setEditandoPorc(String(rb.porciones_base));
+    setEditandoCategoria(rb.categoria || '');
     setShowForm(true);
   }
 
@@ -351,6 +354,7 @@ export default function RecetasBase() {
     setEditandoId(null);
     setEditandoNombre('');
     setEditandoPorc('1');
+    setEditandoCategoria('');
     setShowForm(true);
   }
 
@@ -399,12 +403,13 @@ export default function RecetasBase() {
                   onClick={() => setExpandedId(isOpen ? null : rb.id)}
                   className="w-full px-4 py-3 border-b border-warm-gray/10 flex items-center justify-between text-left bg-olive/5 hover:bg-olive/10 transition-colors border-l-4 border-l-olive"
                 >
-                  <div>
-                    <h3 className="font-bold text-ink">{rb.nombre}</h3>
-                    <p className="text-xs text-warm-gray">
-                      para {rb.porciones_base}
-                    </p>
-                  </div>
+                    <div>
+                      <h3 className="font-bold text-ink">{rb.nombre}</h3>
+                      <p className="text-xs text-warm-gray">
+                        para {rb.porciones_base}
+                        {rb.categoria && <span className="ml-2 uppercase tracking-wide">{rb.categoria}</span>}
+                      </p>
+                    </div>
                   <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     <button onClick={() => abrirEditar(rb)} className="p-1.5 rounded-full hover:bg-olive/10 text-olive transition-colors">
                       <Edit3 className="h-4 w-4" />
@@ -439,6 +444,17 @@ export default function RecetasBase() {
                 <input type="number" min="1" value={editandoPorc} onChange={e => setEditandoPorc(e.target.value)}
                   className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none" />
                 <p className="text-xs text-warm-gray mt-1">Número de personas para las que está pensada esta receta.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-ink mb-1">Categoría</label>
+                <select value={editandoCategoria} onChange={e => setEditandoCategoria(e.target.value)}
+                  className="w-full rounded-lg border border-warm-gray/30 px-4 py-3 bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none">
+                  <option value="">Sin categoría</option>
+                  <option value="entrantes">Entrantes</option>
+                  <option value="principales">Principales</option>
+                  <option value="segundos">Segundos</option>
+                  <option value="postres">Postres</option>
+                </select>
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="submit" disabled={saving || !editandoNombre.trim()}
