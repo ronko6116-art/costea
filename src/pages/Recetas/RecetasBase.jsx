@@ -6,6 +6,7 @@ import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Plus, BookOpen, Loader2, Edit3, Trash2, Check, X } from 'lucide-react';
 import { formatearMoneda } from '../../functions/formatters';
 import PickerList from '../../components/PickerList';
+import MermaToggle from '../../components/MermaToggle';
 
 function RecetaCard({ receta, onRecetaChange }) {
   const { restauranteId } = useRestaurant();
@@ -169,15 +170,7 @@ function RecetaCard({ receta, onRecetaChange }) {
                             className="w-20 rounded-lg border border-terracotta/30 px-2 py-2 text-sm bg-white font-medium"
                           />
                           <span className="text-xs text-warm-gray font-medium">{l.ingrediente.unidad_medida === 'docena' ? 'uds' : l.ingrediente.unidad_medida}</span>
-                          <select
-                            value={editMerma}
-                            onChange={e => setEditMerma(e.target.value)}
-                            className="rounded-lg border border-terracotta/30 px-2 py-2 text-sm bg-white font-medium"
-                          >
-                            <option value="0">Sin merma</option>
-                            <option value="20">Merma 20%</option>
-                            <option value="40">Merma 40%</option>
-                          </select>
+                          <MermaToggle value={editMerma} onChange={setEditMerma} size="xs" />
                         </div>
                         <div className="flex gap-2 pt-1">
                           <button onClick={() => handleUpdate(l.id)} disabled={saving}
@@ -238,14 +231,7 @@ function RecetaCard({ receta, onRecetaChange }) {
                 />
                 <div className="flex gap-2">
                   <input type="number" step="0.001" min="0.001" value={cantidad} onChange={e => setCantidad(e.target.value)} placeholder="Cantidad" className="flex-1 rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white" required />
-                  {[
-                    { v: '0', l: 'Sin' },
-                    { v: '20', l: '20%' },
-                    { v: '40', l: '40%' },
-                  ].map(o => (
-                    <button key={o.v} type="button" onClick={() => setMermaPct(o.v)}
-                      className={`px-3 py-2 rounded-lg text-xs font-medium border ${mermaPct === o.v ? 'bg-terracotta text-white border-terracotta' : 'bg-white text-ink-soft border-warm-gray/30'}`}>{o.l}</button>
-                  ))}
+                  <MermaToggle value={mermaPct} onChange={setMermaPct} />
                 </div>
                 <div className="flex gap-2 pt-1">
                   <button type="submit" disabled={saving || !selectedIng} className="flex-1 bg-terracotta text-white rounded-full py-2 text-sm font-semibold disabled:opacity-50">
