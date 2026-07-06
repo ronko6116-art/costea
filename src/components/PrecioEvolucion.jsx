@@ -8,9 +8,8 @@ import { useRestaurant } from '../contexts/RestaurantContext';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
-    console.log('Tooltip payload:', JSON.parse(JSON.stringify(payload)));
-    console.log('Tooltip value:', payload[0].value, 'payload.precio:', payload[0].payload?.precio);
-    const precio = payload[0].payload?.precio ?? payload[0].value;
+    const d = payload[0];
+    const precio = d.payload?.precio ?? d.value;
     return (
       <div className="bg-white border border-warm-gray/20 rounded-lg px-3 py-2 shadow-md text-sm">
         <p className="text-warm-gray text-xs">{label}</p>
@@ -30,19 +29,13 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
   useEffect(() => {
     if (!restauranteId) return;
     const fetch = async () => {
-      console.log('PrecioEvolucion: ingredienteId=', ingredienteId, 'restauranteId=', restauranteId);
-      
       const { data: ing, error: errIng } = await supabase
         .from('ingredientes')
         .select('nombre, precio_actual, unidad_medida, restaurante_id')
         .eq('id', ingredienteId)
         .single();
       if (errIng) console.error('PrecioEvolucion: error ingrediente', errIng);
-      if (ing) {
-        setIngrediente(ing);
-      }
-
-      console.log('PrecioEvolucion: ingrediente restaurante_id=', ing?.restaurante_id, 'fallback restauranteId=', restauranteId);
+      if (ing) setIngrediente(ing);
 
       const rId = ing?.restaurante_id || restauranteId;
       const { data: hist, error: errHist } = await supabase
@@ -65,7 +58,6 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
           precio: h.precio,
           ts: h.creado_en,
         }));
-        console.log('PrecioEvolucion: datos cargados', JSON.parse(JSON.stringify(puntos)));
         setDatos(puntos);
         setLoading(false);
         return;
