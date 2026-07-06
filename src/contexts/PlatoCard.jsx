@@ -25,7 +25,7 @@ export default function PlatoCard({ plato, onPress }) {
   return (
     <div
       onClick={onPress}
-      className="bg-white rounded-xl border border-warm-gray/10 shadow-sm overflow-hidden active:scale-[0.99] transition-transform cursor-pointer"
+      className={`bg-white rounded-xl border border-warm-gray/10 ${plato.activo === false ? 'border-l-4 border-l-terracotta/60' : ''} shadow-sm overflow-hidden active:scale-[0.99] transition-transform cursor-pointer`}
     >
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
