@@ -53,9 +53,9 @@
 - **Modo Fácil de Merma** en RecetaManager (botones: Sin merma, Media 20%, Alta 40%)
 
 ### Gráficos e histórico
-- **Trigger automático**: al actualizar `precio_actual` en ingredientes, se guarda el precio + fecha en `precios_historicos` vía trigger SQL (columnas: `precio`, `fecha`, `precio_anterior`, `precio_nuevo`)
-- **Gráfica de evolución por ingrediente** (`PrecioEvolucion.jsx`): botón 📈 en `IngredienteList.jsx` y pestaña "Evolución" en el modal de `PlatoDetail.jsx` — LineChart con recharts (precio vs fecha)
-- **Alertas de precio en Dashboard** (`AlertasPrecio.jsx`): muestra ingredientes con mayor variación de precio en los últimos 30 días, con indicador de subida/bajada/estable
+- **Trigger automático**: al actualizar `precio_actual` en ingredientes, se guarda el precio + fecha en `precios_historicos` vía trigger SQL (columnas: `precio`, `fecha`, `precio_anterior`, `precio_nuevo`). Trigger usa `CURRENT_DATE` para la fecha (no `NEW.fecha_compra`)
+- **Gráfica de evolución por ingrediente** (`PrecioEvolucion.jsx`): botón 📈 en `IngredienteList.jsx` y pestaña "Evolución" en el modal de `PlatoDetail.jsx` — LineChart con recharts (precio vs fecha). Datos deduplicados por `(fecha, proveedor_id)` vía helpers compartidos
+- **Alertas de precio en Dashboard** (`AlertasPrecio.jsx`): muestra ingredientes con mayor variación de precio en los últimos 30 días, con indicador de subida/bajada/estable. Datos deduplicados por `(ingrediente_id, fecha, proveedor_id)`
 
 ### PWA (Progressive Web App)
 - **Manifest**: nombre "Costea - Gestión de Costes", `display: standalone`, iconos en 144/192/512px (SVG con logo € terracota)
@@ -129,21 +129,7 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 
 ---
 
-## API endpoint (Vercel Serverless)
 
-| Endpoint | Descripción |
-|----------|-------------|
-| `api/health.js` | Health check (versión Node) |
-
----
-
-## Supabase Edge Functions
-
-| Función | Estado |
-|---------|--------|
-| `check-email` | **Completamente comentada** (`/* */`). Verificaba existencia de email vía admin API. Nunca se usó desde el frontend. |
-
----
 
 ## Bugs conocidos / Issues
 
@@ -152,17 +138,28 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 
 ### Medios
 - **Precios en 3 sitios**: `ingredientes.precio_actual` + `precios_proveedor` + `precios_historicos` — posible deriva si algún code path no actualiza todos.
-- **Directorios vacíos**: `src/hooks/`, `src/functions/formatters/`, `src/assets/` existen pero no tienen contenido.
+- **precios_historicos.proveedor_id**: columna existente pero el frontend aún no la usa consistentemente en todos los queries de gráficos.
 
 ### Bajos
 - **Restaurante en localStorage**: funciona para una pestaña, pero podría quedar referencia huérfana si se borra el restaurante en otra pestaña.
-- **check-email edge function muerta**: no se referencia desde el frontend; `Recuperar.jsx` usa un hack propio (login con fake password) para detectar cuentas.
 - **Mock histórico de precios**: `999_mock_historicos.sql` inserta datos de prueba. Si se ejecuta en producción, podría contaminar datos reales.
-- **RecetaManager.jsx obsoleto**: componente sin usar tras eliminar ruta `/recetas/:id/ingredientes` (marzo 2025). Se puede eliminar.
+- **set-state-in-effect en varios componentes**: error ESLint presente en `AuthContext`, `ComparativaProveedores`, `PlatoForm`, `RecetasBase`, `Graficos` y otros (pre-existing, no crítico para funcionalidad).
+- **SonarCloud desactivado**: reemplazado por knip + ESLint complexity rule (más ligeros).
 
 ---
 
-## Bugs resueltos (último sprint)
+## Bugs resueltos (sprint actual)
+
+| Bug | Solución |
+|-----|----------|
+| **Tooltip gráfico siempre muestra 18€ (mismo precio en todos los puntos)** | Root cause: migración 024 cambió trigger a `NEW.fecha_compra` como `fecha`, aplanando todos los registros en una misma fecha. Migración 025 revierte a `CURRENT_DATE` + backfill |
+| **Precios repetidos en gráfica (misma fecha + mismo proveedor)** | Migración 026 añade `proveedor_id` a `precios_historicos`. Helper `deduplicarPorFecha` en `src/helpers/precios.js` elimina duplicados de `(fecha, proveedor_id)` conservando el más reciente |
+| **Precios mezclados de diferentes proveedores en misma fecha** | `fechaKey(fecha, proveedorId)` permite agrupar por fecha+proveedor. `AlertasPrecio` desduplica por `(ingrediente_id, fecha, proveedor_id)` |
+| **Dashboard complejidad 37 / PlatoDetail 33 / doSave 23** | Refactor: extracción de hooks, helpers y componentes. Todas las funciones target ahora < 10 de complejidad ciclomática |
+| **Código muerto: ErrorBoundary, RecetaManager, api/health, check-email** | Eliminados tras detección con knip |
+| **SonarCloud análisis lento (+6 min, requiere JRE)** | Reemplazado por knip (análisis local < 1s) + ESLint complexity rule |
+
+## Bugs resueltos (sprint anterior)
 
 | Bug | Solución |
 |-----|----------|
@@ -188,16 +185,15 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 1. **Calculador de Menú del Día**: seleccionar 1º plato + 2º plato + postre de los existentes; muestra coste total, precio sugerido y ganancia por cliente
 
 ### Prioridad 2 — Medio impacto
-4. **Clonar recetas**: botón para duplicar un plato con todos sus ingredientes (útil para variaciones: ración/media ración)
-5. **Filtrar proveedores por restaurante en IngredienteForm**: actualmente fetchan todos sin filtrar
-6. **Eliminar RecetaManager.jsx obsoleto**: componente sin uso desde que se eliminó la ruta `/recetas/:id/ingredientes`
-7. **Mover 999_mock_historicos.sql fuera de migrations/**: añadir guarda de entorno o mover a carpeta de tests
+2. **Clonar recetas**: botón para duplicar un plato con todos sus ingredientes (útil para variaciones: ración/media ración)
+3. **Filtrar proveedores por restaurante en IngredienteForm**: actualmente fetchan todos sin filtrar
+4. **Mover 999_mock_historicos.sql fuera de migrations/**: añadir guarda de entorno o mover a carpeta de tests
+5. **Tests de componentes con @testing-library/react**: extender cobertura más allá de helpers
 
 ### Prioridad 3 — Bajo impacto
-8. **Modo oscuro** (CSS variables + toggle) — útil en cocinas con poca luz
-9. **Exportar menú a PDF/WhatsApp** — lista limpia con costes para compartir
-10. **Llenar directorios vacíos** — hooks, formatters, assets
-11. **Reemplazar hack Recuperar.jsx** — usar edge function check-email con admin API en lugar del login con password falsa
+6. **Modo oscuro** (CSS variables + toggle) — útil en cocinas con poca luz
+7. **Exportar menú a PDF/WhatsApp** — lista limpia con costes para compartir
+8. **Reemplazar hack Recuperar.jsx** — usar edge function con admin API en lugar del login con password falsa
 
 ---
 
@@ -218,14 +214,16 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 | **ErrorBoundary global** | Captura errores inesperados de React sin colapsar la app. UI diferenciada para desarrollo (detalles técnicos) y producción (mensaje amigable) |
 | **PWA con service worker** | Permite instalar la app en móvil, sesión persistente al abrir desde pantalla de inicio, carga más rápida gracias al precaching |
 | **AuthContext robusto (catch + timeout + retry)** | Evita que la app se quede en "Cargando..." si `localStorage` falla (comportamiento conocido en iOS PWA standalone) |
+| **knip > SonarCloud** | knip detecta código/dependencias/exports muertos en < 1s sin JRE ni servicios externos. SonarCloud necesitaba JRE + 6 min de análisis + token |
+| **ESLint complexity rule (max 10)** | Previene funciones demasiado largas/complejas. Refactorización obligada si una función supera el límite |
+| **Deduplicación de precios por (fecha, proveedor_id)** | `deduplicarPorFecha` con callback `getKey` permite que cada componente defina su criterio de agrupación. `PrecioEvolucion` agrupa por `(fecha, proveedor_id)`, `AlertasPrecio` por `(ingrediente_id, fecha, proveedor_id)` |
+| **Helpers compartidos para dedup en `src/helpers/precios.js`** | `fechaKey`, `deduplicarPorFecha` y `mapearPuntos` extraídos a módulo común con 15 tests unitarios (vitest). Elimina duplicación de lógica entre componentes |
 
 ---
 
 ## Estructura de archivos clave
 
 ```
-├── api/
-│   └── health.js                     # Health check
 ├── public/
 │   ├── favicon.svg                   # Logo Costea (€ terracota)
 │   ├── icons.svg
@@ -242,10 +240,17 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 │   ├── utils/
 │   │   └── categorias.js             # CATEGORIAS + ORDEN_CATEGORIAS (compartido)
 │   ├── components/
-│   │   ├── ErrorBoundary.jsx         # ErrorBoundary global (dev/prod UI)
+│   │   ├── AlertasBanner.jsx         # Banner de alertas de margen en Dashboard
+│   │   ├── AlertasPrecio.jsx         # Widget alertas de precio Dashboard
+│   │   ├── BarraFiltros.jsx          # Barra de filtros del Dashboard
+│   │   ├── CategoriaDropdown.jsx     # Menú desplegable de categorías
+│   │   ├── InfoPlato.jsx             # Resumen del plato + inline editing precios
+│   │   ├── ListaIngredientes.jsx     # Desglose de ingredientes con costes
+│   │   ├── MargenObjetivoSection.jsx # Edición inline de margen objetivo
 │   │   ├── Navbar.jsx                # Navbar público (landing)
+│   │   ├── PlatoListContent.jsx      # Lista platos con estado carga/vacío/lista
 │   │   ├── PrecioEvolucion.jsx       # Gráfica evolución precio (recharts)
-│   │   └── AlertasPrecio.jsx         # Widget alertas de precio Dashboard
+│   │   └── SelectorRestaurante.jsx   # Selector de restaurante + crear nuevo
 │   ├── contexts/
 │   │   ├── AuthContext.jsx           # Auth robusto: catch, timeout, retry, limpieza
 │   │   ├── AppLayout.jsx             # Navbar inferior + wrapper
@@ -267,8 +272,7 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 │   │   │   └── Onboarding.jsx        # Crear primer restaurante
 │   │   ├── Plato/
 │   │   │   ├── PlatoDetail.jsx       # Detalle + inline editing + acordeón recetas
-│   │   │   ├── PlatoForm.jsx         # Crear/editar plato (con factor docena)
-│   │   │   └── RecetaManager.jsx     # (obsoleto, sin uso desde mar 2025)
+│   │   │   └── PlatoForm.jsx         # Crear/editar plato (con factor docena)
 │   │   ├── Ingrediente/
 │   │   │   ├── IngredienteForm.jsx   # Crear/editar ingrediente con fecha_compra + modal tipo compra
 │   │   │   └── IngredienteList.jsx   # Lista con búsqueda, categorías y fecha de compra
@@ -281,25 +285,33 @@ margen_pct  = (precio_venta - coste_total) / precio_venta * 100
 │   │   │   └── PreciosIngrediente.jsx # Pizarra de precios por categorías
 │   │   └── Graficos/
 │   │       └── Graficos.jsx          # Página de gráficos con AlertasPrecio
-│   ├── hooks/                        # (vacío)
-│   ├── functions/formatters/         # (vacío)
-│   └── assets/                       # (vacío)
+│   ├── hooks/
+│   │   └── usePlatoDetail.js      # Hook de fetching para PlatoDetail
+│   ├── helpers/
+│   │   ├── precios.js             # Dedup helpers + mapeo de puntos (fechaKey, deduplicarPorFecha, mapearPuntos)
+│   │   ├── precios.test.js        # 15 tests unitarios (vitest)
+│   │   ├── platoFilters.js        # Filtros, categorías y alertas extraídos de Dashboard
+│   │   ├── platoSave.js           # Guardado de campos + cálculos derivados de plato
+│   │   └── ingredienteSave.js     # Guardado de ingredientes (proveedor, compra, histórico)
+│   └── assets/
 ├── supabase/
-│   ├── functions/check-email/index.ts # Edge Function (comentada)
 │   └── migrations/
 │       ├── 001_fix_vista_coste_platos.sql
 │       ├── 017_vista_porciones_base.sql
 │       ├── 018_trigger_insert_ingredientes.sql  # Trigger INSERT+UPDATE + backfill
 │       ├── 019_add_fecha_compra.sql             # Columna fecha_compra en ingredientes
 │       ├── 020_enable_rls_all_tables.sql        # RLS en todas las tablas + trigger SECURITY DEFINER
-│       └── 021_fix_vista_costes_docena.sql     # Factor docena en vista_coste_platos
+│       ├── 021_fix_vista_costes_docena.sql     # Factor docena en vista_coste_platos
+│       ├── 025_fix_trigger_fecha.sql            # Trigger usa CURRENT_DATE en vez de NEW.fecha_compra + backfill
+│       └── 026_add_proveedor_precios_historicos.sql  # Columna proveedor_id en precios_historicos + backfill
 ├── index.html                       # Meta tags PWA + apple-touch-icon
 ├── .env                             # Variables públicas (Supabase, Turnstile)
 ├── .env.local                       # Desarrollo local (no versionado)
 ├── .env.production                  # Producción Vercel
 ├── vercel.json                      # Rewrites SPA + API
-├── vite.config.js                   # Vite + React + babel + PWA plugin
+├── vite.config.js                   # Vite + React + babel + PWA plugin + vitest coverage (v8, lcov)
 ├── postcss.config.cjs
-├── eslint.config.js
+├── eslint.config.js                 # ESLint flat config + complexity rule (max 10)
+├── knip.json                        # knip: detecta código/dependencias/exports muertos
 └── package.json
 ```
