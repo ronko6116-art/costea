@@ -3,6 +3,8 @@
 -- del mismo producto a diferentes proveedores en la misma fecha.
 -- Si dos registros tienen la misma fecha y proveedor, se asume que
 -- el último (por creado_en) es una corrección del precio.
+--
+-- Nota: la columna en ingredientes se llama proveedor_habitual_id.
 
 -- 1. Añadir columna proveedor_id (nullable para registros existentes)
 ALTER TABLE precios_historicos
@@ -23,7 +25,7 @@ BEGIN
       0,
       NEW.precio_actual,
       NEW.restaurante_id,
-      NEW.proveedor_id,
+      NEW.proveedor_habitual_id,
       NOW()
     );
   ELSIF TG_OP = 'UPDATE' AND OLD.precio_actual IS DISTINCT FROM NEW.precio_actual THEN
@@ -35,7 +37,7 @@ BEGIN
       OLD.precio_actual,
       NEW.precio_actual,
       NEW.restaurante_id,
-      NEW.proveedor_id,
+      NEW.proveedor_habitual_id,
       NOW()
     );
   END IF;
@@ -43,9 +45,10 @@ BEGIN
 END;
 $$;
 
--- 3. Backfill: asignar proveedor_id actual del ingrediente a registros existentes
+-- 3. Backfill: asignar proveedor_habitual_id del ingrediente a registros existentes
 UPDATE precios_historicos ph
-SET proveedor_id = i.proveedor_id
+SET proveedor_id = i.proveedor_habitual_id
 FROM ingredientes i
 WHERE ph.ingrediente_id = i.id
-  AND ph.proveedor_id IS NULL;
+  AND ph.proveedor_id IS NULL
+  AND i.proveedor_habitual_id IS NOT NULL;

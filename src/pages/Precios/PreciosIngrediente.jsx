@@ -95,7 +95,7 @@ export default function PreciosIngrediente() {
         precio_anterior: precioAnterior,
         precio_nuevo: nuevoPrecio,
         restaurante_id: restauranteId,
-        proveedor_id: ing?.proveedor_id || null,
+        proveedor_id: ing?.proveedor_habitual_id || null,
         creado_en: new Date().toISOString(),
       });
     if (histErr) console.error('Error insertando historico:', histErr);

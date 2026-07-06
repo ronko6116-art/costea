@@ -116,7 +116,7 @@ export default function IngredienteForm() {
       if (id && tipo === 'pasada') {
         const { data: ingActual } = await supabase
           .from('ingredientes')
-          .select('precio_actual, restaurante_id, proveedor_id')
+          .select('precio_actual, restaurante_id, proveedor_habitual_id')
           .eq('id', id)
           .single();
 
@@ -129,7 +129,7 @@ export default function IngredienteForm() {
             precio_anterior: ingActual?.precio_actual || 0,
             precio_nuevo: precioNum,
             restaurante_id: ingActual?.restaurante_id || restauranteId,
-            proveedor_id: ingActual?.proveedor_id || null,
+            proveedor_id: ingActual?.proveedor_habitual_id || null,
             creado_en: new Date().toISOString(),
           });
 
