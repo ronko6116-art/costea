@@ -25,6 +25,10 @@ export default function Dashboard() {
   const [showNewRestaurant, setShowNewRestaurant] = useState(false);
   const [newRestaurantName, setNewRestaurantName] = useState('');
   const [creandoRest, setCreandoRest] = useState(false);
+  const [filtro, setFiltro] = useState('todo'); // 'todo', 'alertas'
+  const [categoriaFiltro, setCategoriaFiltro] = useState('');
+  const [ordenBeneficio, setOrdenBeneficio] = useState('none'); // 'none', 'asc', 'desc'
+  const [showCatMenu, setShowCatMenu] = useState(false);
 
   useEffect(() => {
     if (!loadingRest && restaurantes.length === 0) {
@@ -61,6 +65,29 @@ export default function Dashboard() {
     platos.filter(p => p.margen_objetivo > 0 && p.margen_pct < p.margen_objetivo),
     [platos]
   );
+
+  // Categorías únicas disponibles en los platos
+  const categorias = useMemo(() => {
+    const cats = [...new Set(platos.map(p => p.categoria).filter(Boolean))];
+    return cats.sort();
+  }, [platos]);
+
+  // Platos filtrados según el filtro activo
+  const filteredPlatos = useMemo(() => {
+    let result = [...platos];
+    if (filtro === 'alertas') {
+      result = result.filter(p => p.margen_objetivo > 0 && p.margen_pct < p.margen_objetivo);
+    }
+    if (categoriaFiltro) {
+      result = result.filter(p => p.categoria === categoriaFiltro);
+    }
+    if (ordenBeneficio === 'asc') {
+      result.sort((a, b) => a.margen_pct - b.margen_pct);
+    } else if (ordenBeneficio === 'desc') {
+      result.sort((a, b) => b.margen_pct - a.margen_pct);
+    }
+    return result;
+  }, [platos, filtro, categoriaFiltro, ordenBeneficio]);
 
   const handleLogout = async () => {
     await signOut();
@@ -244,6 +271,88 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Filtros */}
+        {platos.length > 0 && (
+          <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <button
+              onClick={() => { setFiltro('todo'); setCategoriaFiltro(''); setShowCatMenu(false); }}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${
+                filtro === 'todo' && !categoriaFiltro && ordenBeneficio === 'none'
+                  ? 'bg-terracotta text-white border-terracotta'
+                  : 'bg-white text-ink border-warm-gray/20 hover:border-terracotta/30'
+              }`}
+            >
+              Todo
+            </button>
+            <button
+              onClick={() => setFiltro(filtro === 'alertas' ? 'todo' : 'alertas')}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${
+                filtro === 'alertas'
+                  ? 'bg-red-500 text-white border-red-500'
+                  : 'bg-white text-ink border-warm-gray/20 hover:border-red-300'
+              }`}
+            >
+              Alertas {alertasMargen.length > 0 && `(${alertasMargen.length})`}
+            </button>
+            <div className="relative shrink-0">
+              <button
+                onClick={() => setShowCatMenu(!showCatMenu)}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium border transition-colors flex items-center gap-1 ${
+                  categoriaFiltro
+                    ? 'bg-terracotta text-white border-terracotta'
+                    : 'bg-white text-ink border-warm-gray/20 hover:border-terracotta/30'
+                }`}
+              >
+                {categoriaFiltro || 'Categoría'}
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showCatMenu ? 'rotate-180' : ''}`} />
+              </button>
+              {showCatMenu && (
+                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl border border-warm-gray/20 shadow-lg z-10 min-w-[140px] overflow-hidden">
+                  <button
+                    onClick={() => { setCategoriaFiltro(''); setShowCatMenu(false); setFiltro('todo'); }}
+                    className="w-full text-left px-4 py-2 text-sm text-ink hover:bg-cream"
+                  >
+                    Todas
+                  </button>
+                  {categorias.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => { setCategoriaFiltro(cat); setShowCatMenu(false); setFiltro('todo'); }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-cream ${
+                        categoriaFiltro === cat ? 'bg-cream font-semibold text-terracotta' : 'text-ink'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                setOrdenBeneficio(prev => prev === 'none' ? 'desc' : prev === 'desc' ? 'asc' : 'none');
+              }}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium border transition-colors flex items-center gap-1 ${
+                ordenBeneficio !== 'none'
+                  ? 'bg-terracotta text-white border-terracotta'
+                  : 'bg-white text-ink border-warm-gray/20 hover:border-terracotta/30'
+              }`}
+            >
+              Beneficio
+              {ordenBeneficio === 'desc' && ' ↓'}
+              {ordenBeneficio === 'asc' && ' ↑'}
+            </button>
+            {categoriaFiltro && (
+              <button
+                onClick={() => setCategoriaFiltro('')}
+                className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium bg-terracotta/10 text-terracotta border border-terracotta/20"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Lista de platos en formato tarjeta (mobile-first) */}
         {loadingPlatos ? (
           <div className="space-y-3">
@@ -254,13 +363,19 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        ) : platos.length === 0 ? (
+        ) : filteredPlatos.length === 0 ? (
           <div className="bg-white rounded-xl p-6 text-center shadow-sm">
-            <p className="text-ink-soft">Aún no hay platos en este restaurante.</p>
+            <p className="text-ink-soft">
+              {filtro === 'alertas'
+                ? 'No hay platos con alertas de margen.'
+                : categoriaFiltro
+                ? `No hay platos en la categoría "${categoriaFiltro}".`
+                : 'Aún no hay platos en este restaurante.'}
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {platos.map((plato) => (
+            {filteredPlatos.map((plato) => (
                 <PlatoCard
                     key={plato.plato_id}
                     plato={plato}

@@ -30,6 +30,8 @@ export default function PlatoDetail() {
   const [editandoMargenObj, setEditandoMargenObj] = useState(false);
   const [tempMargenObj, setTempMargenObj] = useState('');
 
+  const [activo, setActivo] = useState(true);
+
   // Proveedores y categorías para navegación
   const [proveedores, setProveedores] = useState([]);
 
@@ -50,6 +52,13 @@ export default function PlatoDetail() {
 
         if (platoError) throw platoError;
         setPlato(platoData);
+
+        const { data: platoRow } = await supabase
+          .from('platos')
+          .select('activo')
+          .eq('id', id)
+          .single();
+        setActivo(platoRow?.activo !== false);
 
         const { data: recetaData, error: recetaError } = await supabase
           .from('receta_lineas')
@@ -143,6 +152,19 @@ export default function PlatoDetail() {
 
     setEditandoPrecioVenta(false);
     setEditandoMargenObj(false);
+  };
+
+  const handleToggleActivo = async () => {
+    const nuevoValor = !activo;
+    const { error } = await supabase
+      .from('platos')
+      .update({ activo: nuevoValor, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) {
+      alert('Error al cambiar visibilidad: ' + error.message);
+      return;
+    }
+    setActivo(nuevoValor);
   };
 
   const handleBack = () => {
@@ -305,6 +327,24 @@ export default function PlatoDetail() {
               Ración: {plato.factor_porcion === 0.25 ? 'Tapa' : plato.factor_porcion === 0.5 ? 'Media' : plato.factor_porcion + 'x'}
             </div>
           )}
+
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              onClick={handleToggleActivo}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                activo ? 'bg-green-500' : 'bg-warm-gray/40'
+              }`}
+            >
+              <span
+                className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform ${
+                  activo ? 'translate-x-[18px]' : 'translate-x-[2px]'
+                }`}
+              />
+            </button>
+            <span className="text-xs text-ink-soft">
+              {activo ? 'Visible en dashboard' : 'Oculto en dashboard'}
+            </span>
+          </div>
 
           {editandoPrecioVenta && (
             <div className="mt-3 pt-3 border-t border-warm-gray/10">
