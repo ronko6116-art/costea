@@ -483,8 +483,7 @@ export default function RecetasBase() {
                   <div>
                     <h3 className="font-bold text-ink">{rb.nombre}</h3>
                     <p className="text-xs text-warm-gray">
-                      {rb.porciones_base} porc. base
-                      {platosCount[rb.id] > 0 && ` · ${platosCount[rb.id]} plato${platosCount[rb.id] > 1 ? 's' : ''}`}
+                      para {rb.porciones_base}
                     </p>
                   </div>
                   <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
