@@ -8,6 +8,8 @@ import { useRestaurant } from '../contexts/RestaurantContext';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
+    console.log('Tooltip payload:', JSON.parse(JSON.stringify(payload)));
+    console.log('Tooltip value:', payload[0].value, 'payload.precio:', payload[0].payload?.precio);
     const precio = payload[0].payload?.precio ?? payload[0].value;
     return (
       <div className="bg-white border border-warm-gray/20 rounded-lg px-3 py-2 shadow-md text-sm">
@@ -63,6 +65,7 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
           precio: h.precio,
           ts: h.creado_en,
         }));
+        console.log('PrecioEvolucion: datos cargados', JSON.parse(JSON.stringify(puntos)));
         setDatos(puntos);
         setLoading(false);
         return;
