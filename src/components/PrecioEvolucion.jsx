@@ -8,10 +8,11 @@ import { useRestaurant } from '../contexts/RestaurantContext';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
+    const precio = payload[0].payload?.precio ?? payload[0].value;
     return (
       <div className="bg-white border border-warm-gray/20 rounded-lg px-3 py-2 shadow-md text-sm">
         <p className="text-warm-gray text-xs">{label}</p>
-        <p className="font-bold text-ink">{formatearMonedaCompacto(payload[0].value)}</p>
+        <p className="font-bold text-ink">{formatearMonedaCompacto(precio)}</p>
       </div>
     );
   }
@@ -50,11 +51,15 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
         .order('fecha', { ascending: true });
       if (errHist) console.error('PrecioEvolucion: error historico', errHist);
 
-      console.log('PrecioEvolucion: hist query restaurante_id=', rId, 'rows=', hist?.length);
+      const formatearFecha = (f) => {
+        if (!f) return '';
+        if (typeof f === 'string') return format(parseISO(f), 'dd MMM', { locale: es });
+        return format(f, 'dd MMM', { locale: es });
+      };
 
       if (hist && hist.length > 0) {
         const puntos = hist.map((h) => ({
-          fecha: format(parseISO(h.fecha), 'dd MMM', { locale: es }),
+          fecha: formatearFecha(h.fecha),
           precio: h.precio,
           ts: h.creado_en,
         }));
@@ -65,7 +70,6 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
 
       // Fallback: intentar sin filtrar por restaurante (ingredientes viejos sin restaurante_id)
       if (rId) {
-        console.log('PrecioEvolucion: fallback sin restaurante_id');
         let histAll, errAll;
         ({ data: histAll, error: errAll } = await supabase
           .from('precios_historicos')
@@ -76,7 +80,6 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
 
         if (!histAll?.length) {
           // Fallback 3: columnas alternativas (precio_anterior como precio, creado_en como fecha)
-          console.log('PrecioEvolucion: fallback con columnas alternativas');
           ({ data: histAll, error: errAll } = await supabase
             .from('precios_historicos')
             .select('precio_anterior, creado_en')
@@ -86,7 +89,7 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
 
           if (histAll?.length) {
             const puntos = histAll.map((h) => ({
-              fecha: format(parseISO(h.creado_en), 'dd MMM', { locale: es }),
+              fecha: formatearFecha(h.creado_en),
               precio: h.precio_anterior,
               ts: h.creado_en,
             }));
@@ -98,7 +101,7 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
 
         if (histAll?.length) {
           const puntos = histAll.map((h) => ({
-            fecha: format(parseISO(h.fecha), 'dd MMM', { locale: es }),
+            fecha: formatearFecha(h.fecha),
             precio: h.precio,
             ts: h.creado_en,
           }));
