@@ -20,6 +20,8 @@ export default function AlertasPrecio({ restauranteId }) {
           ingrediente_id,
           precio,
           fecha,
+          creado_en,
+          proveedor_id,
           ingrediente:ingrediente_id (nombre, unidad_medida)
         `)
         .eq('restaurante_id', restauranteId)
@@ -32,8 +34,19 @@ export default function AlertasPrecio({ restauranteId }) {
         return;
       }
 
-      const porIngrediente = {};
+      const fechaKey = (f) => f instanceof Date ? f.toISOString().slice(0, 10) : String(f).slice(0, 10);
+      const dedupMap = new Map();
       hist.forEach((h) => {
+        const key = `${h.ingrediente_id}|${fechaKey(h.fecha)}|${h.proveedor_id || ''}`;
+        const existing = dedupMap.get(key);
+        if (!existing || new Date(h.creado_en) > new Date(existing.creado_en)) {
+          dedupMap.set(key, h);
+        }
+      });
+      const deduped = [...dedupMap.values()];
+
+      const porIngrediente = {};
+      deduped.forEach((h) => {
         const id = h.ingrediente_id;
         if (!porIngrediente[id]) {
           porIngrediente[id] = {

@@ -88,7 +88,6 @@ export default function PreciosIngrediente() {
     const ing = ingredientes.find(i => i.id === id);
     const precioAnterior = ing?.precio_actual ?? 0;
 
-    // Insertar directamente en precios_historicos (bypass del trigger de BD)
     const { error: histErr } = await supabase
       .from('precios_historicos')
       .insert({
@@ -96,6 +95,7 @@ export default function PreciosIngrediente() {
         precio_anterior: precioAnterior,
         precio_nuevo: nuevoPrecio,
         restaurante_id: restauranteId,
+        proveedor_id: ing?.proveedor_id || null,
         creado_en: new Date().toISOString(),
       });
     if (histErr) console.error('Error insertando historico:', histErr);

@@ -20,6 +20,35 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
+function fechaKey(f) {
+  return f instanceof Date ? f.toISOString().slice(0, 10) : String(f).slice(0, 10);
+}
+
+function deduplicarPorFecha(arr) {
+  const map = new Map();
+  for (const item of arr) {
+    const key = `${fechaKey(item.fecha)}|${item.proveedor_id || ''}`;
+    const existing = map.get(key);
+    if (!existing || new Date(item.creado_en) > new Date(existing.creado_en)) {
+      map.set(key, item);
+    }
+  }
+  return [...map.values()].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+}
+
+function mapearPuntos(arr) {
+  const formatearFecha = (f) => {
+    if (!f) return '';
+    if (typeof f === 'string') return format(parseISO(f), 'dd MMM', { locale: es });
+    return format(f, 'dd MMM', { locale: es });
+  };
+  return arr.map((h) => ({
+    fecha: formatearFecha(h.fecha),
+    precio: h.precio,
+    ts: h.creado_en,
+  }));
+}
+
 export default function PrecioEvolucion({ ingredienteId, onClose }) {
   const { restauranteId } = useRestaurant();
   const [datos, setDatos] = useState([]);
@@ -40,67 +69,47 @@ export default function PrecioEvolucion({ ingredienteId, onClose }) {
       const rId = ing?.restaurante_id || restauranteId;
       const { data: hist, error: errHist } = await supabase
         .from('precios_historicos')
-        .select('precio, fecha, creado_en')
+        .select('precio, fecha, creado_en, proveedor_id')
         .eq('ingrediente_id', ingredienteId)
         .eq('restaurante_id', rId)
         .order('fecha', { ascending: true });
       if (errHist) console.error('PrecioEvolucion: error historico', errHist);
 
-      const formatearFecha = (f) => {
-        if (!f) return '';
-        if (typeof f === 'string') return format(parseISO(f), 'dd MMM', { locale: es });
-        return format(f, 'dd MMM', { locale: es });
-      };
-
       if (hist && hist.length > 0) {
-        const puntos = hist.map((h) => ({
-          fecha: formatearFecha(h.fecha),
-          precio: h.precio,
-          ts: h.creado_en,
-        }));
-        setDatos(puntos);
+        setDatos(mapearPuntos(deduplicarPorFecha(hist)));
         setLoading(false);
         return;
       }
 
-      // Fallback: intentar sin filtrar por restaurante (ingredientes viejos sin restaurante_id)
       if (rId) {
         let histAll, errAll;
         ({ data: histAll, error: errAll } = await supabase
           .from('precios_historicos')
-          .select('precio, fecha, creado_en')
+          .select('precio, fecha, creado_en, proveedor_id')
           .eq('ingrediente_id', ingredienteId)
           .order('fecha', { ascending: true }));
         if (errAll) console.error('PrecioEvolucion: error historico (fallback)', errAll);
 
         if (!histAll?.length) {
-          // Fallback 3: columnas alternativas (precio_anterior como precio, creado_en como fecha)
           ({ data: histAll, error: errAll } = await supabase
             .from('precios_historicos')
-            .select('precio_anterior, creado_en')
+            .select('precio_anterior, creado_en, proveedor_id')
             .eq('ingrediente_id', ingredienteId)
             .order('creado_en', { ascending: true }));
           if (errAll) console.error('PrecioEvolucion: error columnas alternativas', errAll);
 
           if (histAll?.length) {
-            const puntos = histAll.map((h) => ({
-              fecha: formatearFecha(h.creado_en),
-              precio: h.precio_anterior,
-              ts: h.creado_en,
-            }));
-            setDatos(puntos);
+            const deduped = deduplicarPorFecha(
+              histAll.map((h) => ({ ...h, fecha: h.creado_en }))
+            );
+            setDatos(mapearPuntos(deduped));
             setLoading(false);
             return;
           }
         }
 
         if (histAll?.length) {
-          const puntos = histAll.map((h) => ({
-            fecha: formatearFecha(h.fecha),
-            precio: h.precio,
-            ts: h.creado_en,
-          }));
-          setDatos(puntos);
+          setDatos(mapearPuntos(deduplicarPorFecha(histAll)));
           setLoading(false);
           return;
         }
