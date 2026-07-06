@@ -1,64 +1,51 @@
 import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 
 export default function PickerList({
   items,
   value,
   onChange,
-  placeholder = 'Buscar...',
+  placeholder = 'Seleccionar...',
   emptyMessage = 'Sin resultados',
   renderItem,
-  footer,
-  searchValue: controlledSearch,
-  onSearchChange: controlledSearchChange,
 }) {
-  const [internalSearch, setInternalSearch] = useState('');
-  const isControlled = controlledSearch !== undefined;
-  const search = isControlled ? controlledSearch : internalSearch;
-  const setSearch = isControlled ? controlledSearchChange : setInternalSearch;
-
-  const filtered = items.filter(item =>
-    !search || item.nombre?.toLowerCase().includes(search.toLowerCase())
-  );
+  const [open, setOpen] = useState(false);
+  const selected = items.find(i => i.id === value);
 
   return (
-    <div className="space-y-1">
-      <input
-        type="text"
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        placeholder={placeholder}
-        className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 outline-none transition"
-      />
-      {items.length === 0 ? (
-        <p className="text-sm text-warm-gray py-2 text-center">{emptyMessage}</p>
-      ) : (
-        <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-warm-gray/10 p-1 bg-white">
-          {filtered.length === 0 && search ? (
-            <p className="text-sm text-warm-gray py-2 text-center">Sin coincidencias</p>
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`w-full flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-colors ${
+          selected
+            ? 'border-olive bg-olive/5 font-medium text-ink'
+            : 'border-warm-gray/30 bg-white text-warm-gray'
+        }`}
+      >
+        <span>{selected ? selected.nombre : placeholder}</span>
+        <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1 z-10 bg-white rounded-lg border border-warm-gray/20 shadow-lg max-h-48 overflow-y-auto">
+          {items.length === 0 ? (
+            <p className="text-sm text-warm-gray py-3 text-center">{emptyMessage}</p>
           ) : (
-            filtered.map(item => {
-              const selected = value === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => { onChange(item.id); if (isControlled) controlledSearchChange(''); else setInternalSearch(''); }}
-                  className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
-                    selected
-                      ? 'border-olive bg-olive/5 ring-1 ring-olive'
-                      : 'border-transparent hover:border-warm-gray/20 hover:bg-warm-gray/5'
-                  }`}
-                >
-                  {renderItem ? renderItem(item, selected) : (
-                    <span className="font-medium text-ink">{item.nombre}</span>
-                  )}
-                </button>
-              );
-            })
+            items.map(item => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => { onChange(item.id); setOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-cream transition-colors ${
+                  value === item.id ? 'bg-cream font-semibold text-terracotta' : 'text-ink'
+                }`}
+              >
+                {renderItem ? renderItem(item, value === item.id) : item.nombre}
+              </button>
+            ))
           )}
         </div>
       )}
-      {footer && <div className="pt-1">{footer}</div>}
     </div>
   );
 }

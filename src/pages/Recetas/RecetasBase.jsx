@@ -5,7 +5,6 @@ import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Plus, BookOpen, Loader2, Edit3, Trash2, Check, X } from 'lucide-react';
 import { formatearMoneda } from '../../functions/formatters';
-import { CATEGORIAS } from '../../utils/categorias';
 import PickerList from '../../components/PickerList';
 
 function RecetaCard({ receta, onRecetaChange }) {
@@ -19,11 +18,8 @@ function RecetaCard({ receta, onRecetaChange }) {
   const [mermaPct, setMermaPct] = useState('0');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [creandoIng, setCreandoIng] = useState(false);
-  const [nuevoNom, setNuevoNom] = useState('');
-  const [nuevoUnidad, setNuevoUnidad] = useState('kg');
-  const [nuevoCat, setNuevoCat] = useState('');
-  const [nuevoPrecio, setNuevoPrecio] = useState('');
+
+
   const [editandoLineaId, setEditandoLineaId] = useState(null);
   const [editCantidad, setEditCantidad] = useState('');
   const [editMerma, setEditMerma] = useState('');
@@ -145,33 +141,6 @@ function RecetaCard({ receta, onRecetaChange }) {
     }
   }
 
-  async function handleCrearIng() {
-    if (!nuevoNom.trim()) return;
-    setSaving(true);
-    try {
-      const rid = receta.restaurante_id;
-      if (!rid) throw new Error('Restaurante no identificado');
-      const { data: nuevo, error } = await supabase
-        .from('ingredientes')
-        .insert([{ restaurante_id: rid, nombre: nuevoNom.trim(), unidad_medida: nuevoUnidad, precio_actual: parseFloat(nuevoPrecio) || 0, categoria: nuevoCat || null }])
-        .select('id, nombre, unidad_medida, precio_actual, fecha_compra')
-        .single();
-      if (error) throw error;
-      setDisponibles([...disponibles, { ...nuevo }]);
-      setSelectedIng(nuevo.id);
-      setCreandoIng(false);
-      setNuevoNom('');
-      setNuevoUnidad('kg');
-      setNuevoCat('');
-      setNuevoPrecio('');
-      setError(null);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
     <div className="bg-white/80 rounded-xl border border-warm-gray/10 shadow-sm overflow-hidden">
       <div className="p-4 bg-warm-gray/[0.03]">
@@ -252,74 +221,38 @@ function RecetaCard({ receta, onRecetaChange }) {
               </button>
             ) : (
               <form onSubmit={handleAdd} className="space-y-2 p-3 bg-cream rounded-lg border border-warm-gray/10">
-                {creandoIng ? (
-                  <div className="space-y-2">
-                    <input type="text" value={nuevoNom} onChange={e => setNuevoNom(e.target.value)} placeholder="Nombre" className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white" autoFocus required />
-                    <select value={nuevoUnidad} onChange={e => setNuevoUnidad(e.target.value)} className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white">
-                      <option value="kg">kg</option><option value="g">g</option><option value="l">l</option><option value="ml">ml</option><option value="unidad">unidad</option><option value="docena">docena</option>
-                    </select>
-                    <select value={nuevoCat} onChange={e => setNuevoCat(e.target.value)} className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white">
-                      <option value="">Sin categoría</option>
-                      {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                    <input type="number" step="0.01" min="0" value={nuevoPrecio} onChange={e => setNuevoPrecio(e.target.value)} placeholder="Precio (€)" className="w-full rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white" />
-                    <div className="flex gap-2">
-                      <button type="button" onClick={handleCrearIng} disabled={saving || !nuevoNom.trim()} className="flex-1 bg-olive text-white rounded-full py-2 text-sm font-semibold disabled:opacity-50">
-                        {saving ? <><Loader2 className="h-3 w-3 animate-spin inline" /> Creando...</> : 'Crear y seleccionar'}
-                      </button>
-                      <button type="button" onClick={() => setCreandoIng(false)} className="flex-1 border border-warm-gray/30 text-ink-soft rounded-full py-2 text-sm font-medium">Cancelar</button>
+                <PickerList
+                  items={disponibles}
+                  value={selectedIng}
+                  onChange={setSelectedIng}
+                  placeholder="Seleccionar ingrediente"
+                  emptyMessage="No hay ingredientes disponibles"
+                  renderItem={i => (
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-ink truncate">{i.nombre}</span>
+                      <span className="text-xs text-ink-soft whitespace-nowrap tabular-nums">
+                        {formatearMoneda(i.precio_actual)}/{i.unidad_medida === 'docena' ? 'doc' : i.unidad_medida}
+                      </span>
                     </div>
-                  </div>
-                ) : (
-                  <>
-                    <PickerList
-                      items={disponibles}
-                      value={selectedIng}
-                      onChange={setSelectedIng}
-                      placeholder="Buscar ingrediente..."
-                      emptyMessage="No hay ingredientes disponibles"
-                      renderItem={i => (
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <span className="font-medium text-ink truncate block">{i.nombre}</span>
-                            {i.proveedor_habitual?.nombre && (
-                              <span className="text-xs text-warm-gray truncate block">{i.proveedor_habitual.nombre}</span>
-                            )}
-                          </div>
-                          <span className="text-xs text-ink-soft whitespace-nowrap tabular-nums">
-                            {formatearMoneda(i.precio_actual)}/{i.unidad_medida === 'docena' ? 'doc' : i.unidad_medida}
-                          </span>
-                        </div>
-                      )}
-                      footer={
-                        <button
-                          type="button"
-                          onClick={() => setCreandoIng(true)}
-                          className="w-full text-left px-3 py-2 rounded-lg border border-dashed border-terracotta/30 text-terracotta font-semibold text-sm hover:bg-terracotta/5 transition-colors"
-                        >
-                          + Crear nuevo ingrediente
-                        </button>
-                      }
-                    />
-                    <div className="flex gap-2">
-                      <input type="number" step="0.001" min="0.001" value={cantidad} onChange={e => setCantidad(e.target.value)} placeholder="Cantidad" className="flex-1 rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white" required />
-                      {[
-                        { v: '0', l: 'Sin' },
-                        { v: '20', l: '20%' },
-                        { v: '40', l: '40%' },
-                      ].map(o => (
-                        <button key={o.v} type="button" onClick={() => setMermaPct(o.v)}
-                          className={`px-3 py-2 rounded-lg text-xs font-medium border ${mermaPct === o.v ? 'bg-terracotta text-white border-terracotta' : 'bg-white text-ink-soft border-warm-gray/30'}`}>{o.l}</button>
-                      ))}
-                    </div>
-                    <div className="flex gap-2 pt-1">
-                      <button type="submit" disabled={saving || !selectedIng} className="flex-1 bg-terracotta text-white rounded-full py-2 text-sm font-semibold disabled:opacity-50">
-                        {saving ? 'Añadiendo...' : 'Añadir'}
-                      </button>
-                      <button type="button" onClick={() => setShowForm(false)} className="flex-1 border border-warm-gray/30 text-ink-soft rounded-full py-2 text-sm font-medium">Cancelar</button>
-                    </div>
-                  </>
-                )}
+                  )}
+                />
+                <div className="flex gap-2">
+                  <input type="number" step="0.001" min="0.001" value={cantidad} onChange={e => setCantidad(e.target.value)} placeholder="Cantidad" className="flex-1 rounded-lg border border-warm-gray/30 px-3 py-2 text-sm bg-white" required />
+                  {[
+                    { v: '0', l: 'Sin' },
+                    { v: '20', l: '20%' },
+                    { v: '40', l: '40%' },
+                  ].map(o => (
+                    <button key={o.v} type="button" onClick={() => setMermaPct(o.v)}
+                      className={`px-3 py-2 rounded-lg text-xs font-medium border ${mermaPct === o.v ? 'bg-terracotta text-white border-terracotta' : 'bg-white text-ink-soft border-warm-gray/30'}`}>{o.l}</button>
+                  ))}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button type="submit" disabled={saving || !selectedIng} className="flex-1 bg-terracotta text-white rounded-full py-2 text-sm font-semibold disabled:opacity-50">
+                    {saving ? 'Añadiendo...' : 'Añadir'}
+                  </button>
+                  <button type="button" onClick={() => { setShowForm(false); setSelectedIng(''); setCantidad(''); setMermaPct('0'); }} className="flex-1 border border-warm-gray/30 text-ink-soft rounded-full py-2 text-sm font-medium">Cancelar</button>
+                </div>
               </form>
             )}
           </>
