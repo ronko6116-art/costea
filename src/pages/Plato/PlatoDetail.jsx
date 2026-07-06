@@ -13,7 +13,8 @@ export default function PlatoDetail() {
   const navigate = useNavigate();
   const { session } = useAuth();
   const { plato, setPlato, ingredientes, loading, error } = usePlatoDetail(id, session);
-  const [activo, setActivo] = useState(true);
+  const [activoOverride, setActivoOverride] = useState(null);
+  const activo = activoOverride ?? plato?.activo ?? true;
 
   const handleToggleActivo = async () => {
     const nuevoValor = !activo;
@@ -25,7 +26,7 @@ export default function PlatoDetail() {
       alert('Error al cambiar visibilidad: ' + err.message);
       return;
     }
-    setActivo(nuevoValor);
+    setActivoOverride(nuevoValor);
   };
 
   const handleDelete = async () => {
