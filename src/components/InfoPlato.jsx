@@ -76,7 +76,7 @@ export default function InfoPlato({ plato, ingredientes, onUpdate }) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 mt-4">
-          <div>
+          <div className={editandoPrecioVenta ? 'sm:col-span-3' : ''}>
             <p className="text-xs text-warm-gray">Precio venta</p>
             <PrecioVentaField
               plato={plato}
