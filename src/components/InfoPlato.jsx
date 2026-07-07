@@ -24,7 +24,7 @@ function PrecioVentaField({ plato, onSave, editando, onStartEdit, onCancel, temp
           <span className="text-sm font-semibold text-ink shrink-0">€</span>
           <input type="number" step="0.01" min="0" value={temp}
             onChange={e => setTemp(e.target.value)}
-            className="w-24 rounded-lg border-2 border-olive/40 px-3 py-2 text-sm bg-white font-semibold focus:border-olive focus:ring-2 focus:ring-olive/20 outline-none transition"
+            className="w-full min-w-0 rounded-lg border-2 border-olive/40 px-3 py-2 text-sm bg-white font-semibold focus:border-olive focus:ring-2 focus:ring-olive/20 outline-none transition"
             autoFocus
             onKeyDown={e => { if (e.key === 'Enter') onSave(temp); if (e.key === 'Escape') onCancel(); }} />
           <button onClick={() => onSave(temp)} className="p-2 rounded-full bg-olive text-white shrink-0 hover:bg-olive-dark transition-colors" title="Guardar">
@@ -75,8 +75,8 @@ export default function InfoPlato({ plato, ingredientes, onUpdate }) {
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-4">
-          <div className="sm:col-span-1">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 mt-4">
+          <div>
             <p className="text-xs text-warm-gray">Precio venta</p>
             <PrecioVentaField
               plato={plato}
