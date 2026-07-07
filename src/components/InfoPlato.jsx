@@ -24,7 +24,7 @@ function PrecioVentaField({ plato, onSave, editando, onStartEdit, onCancel, temp
           <span className="text-sm font-semibold text-ink shrink-0">€</span>
           <input type="number" step="0.01" min="0" value={temp}
             onChange={e => setTemp(e.target.value)}
-            className="w-full min-w-0 rounded-lg border-2 border-olive/40 px-3 py-2 text-sm bg-white font-semibold focus:border-olive focus:ring-2 focus:ring-olive/20 outline-none transition"
+            className="flex-1 min-w-0 rounded-lg border-2 border-olive/40 px-3 py-2 text-sm bg-white font-semibold focus:border-olive focus:ring-2 focus:ring-olive/20 outline-none transition"
             autoFocus
             onKeyDown={e => { if (e.key === 'Enter') onSave(temp); if (e.key === 'Escape') onCancel(); }} />
           <button onClick={() => onSave(temp)} className="p-2 rounded-full bg-olive text-white shrink-0 hover:bg-olive-dark transition-colors" title="Guardar">
