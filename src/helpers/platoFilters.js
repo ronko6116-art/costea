@@ -10,7 +10,7 @@ export function aplicarFiltros(platos, { mostrarOcultos, filtro, categoriaFiltro
   }
 
   if (categoriaFiltro) {
-    result = result.filter(p => p.categoria === categoriaFiltro);
+    result = result.filter(p => p.receta_categoria === categoriaFiltro);
   }
 
   if (ordenBeneficio === 'asc') {
@@ -23,7 +23,7 @@ export function aplicarFiltros(platos, { mostrarOcultos, filtro, categoriaFiltro
 }
 
 export function obtenerCategorias(platos) {
-  const cats = [...new Set(platos.map(p => p.categoria).filter(Boolean))];
+  const cats = [...new Set(platos.map(p => p.receta_categoria).filter(Boolean))];
   return cats.sort();
 }
 

@@ -38,9 +38,9 @@ export default function PlatoCard({ plato, onPress }) {
                 </span>
               )}
             </h3>
-            {plato.categoria && (
+            {plato.receta_categoria && (
               <span className="text-xs text-warm-gray uppercase tracking-wide">
-                {plato.categoria}
+                {plato.receta_categoria}
               </span>
             )}
           </div>
