@@ -46,12 +46,12 @@ export default function IngredienteForm() {
               nombre: data.nombre || '',
               unidad_medida: data.unidad_medida || 'kg',
               precio_actual: data.precio_actual || '',
-              fecha_compra: data.fecha_compra || new Date().toISOString().slice(0, 10),
+              fecha_compra: new Date().toISOString().slice(0, 10),
               categoria: data.categoria || '',
               proveedor_habitual_id: data.proveedor_habitual_id || '',
               nuevoProveedorNombre: '',
             });
-            setFechaOriginal(data.fecha_compra || null);
+            setFechaOriginal(new Date().toISOString().slice(0, 10));
           }
           setLoading(false);
         });

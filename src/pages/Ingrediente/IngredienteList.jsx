@@ -81,7 +81,7 @@ export default function IngredienteList() {
             <ArrowLeft className="h-6 w-6" />
           </button>
           <span className="font-bold text-ink text-lg">Ingredientes</span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/ingredientes/historico')}
               className="p-2 rounded-full hover:bg-olive/10 text-olive transition-colors"
