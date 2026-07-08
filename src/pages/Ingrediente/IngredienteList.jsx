@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
-import { ArrowLeft, Plus, Edit, Trash2, Search, ChevronDown, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, Search, ChevronDown, TrendingUp, Calendar } from 'lucide-react';
 import { CATEGORIAS } from '../../utils/categorias';
 import { formatearMoneda } from '../../functions/formatters';
 
@@ -81,12 +81,21 @@ export default function IngredienteList() {
             <ArrowLeft className="h-6 w-6" />
           </button>
           <span className="font-bold text-ink text-lg">Ingredientes</span>
-          <button
-            onClick={() => navigate('/ingredientes/nuevo')}
-            className="p-2 rounded-full bg-terracotta text-white hover:bg-terracotta-dark transition-colors"
-          >
-            <Plus className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => navigate('/ingredientes/historico')}
+              className="p-2 rounded-full hover:bg-olive/10 text-olive transition-colors"
+              title="Histórico de compras"
+            >
+              <Calendar className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => navigate('/ingredientes/nuevo')}
+              className="p-2 rounded-full bg-terracotta text-white hover:bg-terracotta-dark transition-colors"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </header>
 
