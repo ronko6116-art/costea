@@ -42,19 +42,3 @@ export async function guardarIngrediente(id, dataToSave) {
   dataToSave.created_at = new Date().toISOString();
   return supabase.from('ingredientes').insert([dataToSave]);
 }
-
-export async function actualizarFechaHistorico(id, fechaCompra) {
-  const { data: lastRecord } = await supabase
-    .from('precios_historicos')
-    .select('id')
-    .eq('ingrediente_id', id)
-    .order('creado_en', { ascending: false })
-    .limit(1);
-
-  if (lastRecord?.length) {
-    await supabase
-      .from('precios_historicos')
-      .update({ fecha: fechaCompra })
-      .eq('id', lastRecord[0].id);
-  }
-}

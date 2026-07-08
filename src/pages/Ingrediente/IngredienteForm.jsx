@@ -5,7 +5,7 @@ import { useRestaurant } from '../../contexts/RestaurantContext';
 import { supabase } from '../../supabaseClient';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import { CATEGORIAS } from '../../utils/categorias';
-import { asegurarProveedor, guardarCompraPasada, guardarIngrediente, actualizarFechaHistorico } from '../../helpers/ingredienteSave';
+import { asegurarProveedor, guardarCompraPasada, guardarIngrediente } from '../../helpers/ingredienteSave';
 
 export default function IngredienteForm() {
   const { id } = useParams();
@@ -115,10 +115,6 @@ export default function IngredienteForm() {
 
       const result = await guardarIngrediente(id, dataToSave);
       if (result.error) throw result.error;
-
-      if (id) {
-        await actualizarFechaHistorico(id, formData.fecha_compra);
-      }
 
       navigate('/ingredientes', { replace: true });
     } catch (err) {
