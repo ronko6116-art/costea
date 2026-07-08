@@ -3,9 +3,8 @@ import { es } from 'date-fns/locale';
 
 export function fechaKey(f) {
   if (!f) return '';
-  return f instanceof Date
-    ? f.toISOString().slice(0, 10)
-    : String(f).slice(0, 10);
+  const d = f instanceof Date ? f : new Date(f + (f.includes('T') ? '' : 'T12:00:00'));
+  return format(d, 'yyyy-MM-dd');
 }
 
 export function deduplicarPorFecha(arr, getKey) {

@@ -121,7 +121,7 @@ export default function HistoricoCompras() {
     setEditingId(purchase.id);
     setEditForm({
       precio: String(purchase.precio ?? ''),
-      fecha: purchase.fecha ? purchase.fecha.slice(0, 10) : '',
+      fecha: purchase.fecha ? fechaKey(purchase.fecha) : '',
       proveedor_id: purchase.proveedor_id || '',
     });
   };
