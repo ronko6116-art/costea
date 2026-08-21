@@ -27,8 +27,8 @@ coverage
 
 # Variables de entorno
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 NUL
 supabase/.temp/
